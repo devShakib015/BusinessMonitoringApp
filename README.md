@@ -15,5 +15,5 @@ Features:
 
 It's a complete functional software for small shop, or small businesses. It's very usefull and it's very easy to use.
 
-![alt text](https://images.pexels.com/photos/255379/pexels-photo-255379.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500)
+![alt text](r.png)
  

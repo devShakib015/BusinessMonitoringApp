@@ -13,8 +13,8 @@ down = 840
 root.geometry(f"{right}x{down}")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(BASE_DIR, "practice.db")
-icon_path = os.path.join(BASE_DIR, "icon.ico")
+db_path = os.path.join(BASE_DIR, "main.db")
+icon_path = os.path.join(BASE_DIR, "bma.ico")
 
 root.iconbitmap(icon_path)
 
@@ -48,7 +48,7 @@ def defaultEntry(parent, caption, row, column, width, **options):
 
 
 def defaultButton(parent, caption, row, column, sticky, **options):
-    ttk.Style().configure("TButton", font="Courier 13 bold")
+    ttk.Style().configure("TButton", font="Courier 13 bold", **options)
     button = ttk.Button(parent, text=caption,
                         **options)
     button.grid(row=row, column=column, pady=10, sticky=sticky)
@@ -107,6 +107,16 @@ notebook.add(productFrame, text="Products")
 notebook.add(stockFrame, text="Stocks")
 notebook.add(saleFrame, text="Sales")
 notebook.add(dueFrame, text="Dues")
+
+
+"""
+
+
+Home Start
+
+
+"""
+
 
 #------------------------ Product adding Frame --------------------------------#
 
@@ -657,6 +667,7 @@ trv_home.column(4, anchor=CENTER, width=190)
 LLLL = []
 for i in LLLL:
     trv_home.insert("", "end", values=i)
+
 totalAmountEntry_home = defaultEntry(
     productsListFrame_home, "Total Amount", 2, 0, 30, state="disabled")
 
@@ -760,7 +771,7 @@ def addCustomer_home():
                 customerPhoneEntry_home.config(state="disabled")
                 customerAddressEntry_home.config(state="disabled")
                 messagebox.showerror(
-                    title="Index Error", message="Please insert a valid code. Or add a new customer")
+                    title="Index Error", message="The customer with this code is not found. Try again.")
 
         except ValueError as e:
             CustomerSearchCode_home.delete(0, END)
@@ -791,6 +802,410 @@ customerNameEntry_home.config(state="disabled")
 customerPhoneEntry_home.config(state="disabled")
 customerAddressEntry_home.config(state="disabled")
 
+
+"""
+
+
+Home End
+
+
+"""
+
+
+"""
+
+
+Customers Start
+
+
+"""
+#------------------------ Create funtion to update and showing customers list ------------------------#
+
+customerListFrame_customers = defaultFrame(
+    customerFrame, "Customer List", 0, 1, rowspan=3)
+
+
+def updateCustomersList():
+
+    trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
+                                 show="headings", height=20, padding=5, style="Custom.Treeview")
+    trv_customers.grid(row=0, column=0, columnspan=2)
+
+    trv_customers.heading(1, text='Code')
+    trv_customers.heading(2, text='First Name')
+    trv_customers.heading(3, text='Last Name')
+    trv_customers.heading(4, text='Address')
+    trv_customers.heading(5, text='Phone')
+
+    trv_customers.column(1, anchor=CENTER, width=150)
+    trv_customers.column(2, anchor=CENTER, width=150)
+    trv_customers.column(3, anchor=CENTER, width=150)
+    trv_customers.column(4, anchor=CENTER, width=150)
+    trv_customers.column(5, anchor=CENTER, width=150)
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "select customer_code, first_name, last_name, address, phone from customers order by ID desc")
+    customers_tuple_list = cursor.fetchall()
+
+    for i in customers_tuple_list:
+        trv_customers.insert("", "end", values=i)
+    conn.commit()
+    conn.close()
+
+    def deleteCustomerFromCustomerList():
+        try:
+            selectedCustomerIID = trv_customers.selection()[0]
+            code = trv_customers.item(selectedCustomerIID)["values"][0]
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"DELETE FROM customers WHERE customer_code={int(code)}")
+
+            resposne = messagebox.askyesno(
+                title="Confirm delete customer", message="Are you sure you want to delete this customer?")
+            if resposne == True:
+                conn.commit()
+                conn.close()
+                trv_customers.delete(*trv_customers.get_children())
+                updateCustomersList()
+            else:
+                return
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
+
+            trv_customers.delete(*trv_customers.get_children())
+            updateCustomersList()
+
+    deleteCustomerFromCustomerListButton = defaultButton(
+        customerListFrame_customers, "Delete selected Customer", 1, 0, W+E, command=deleteCustomerFromCustomerList)
+
+    def editCustomerFromCustomerList():
+        try:
+            selectedCustomerIID = trv_customers.selection()[0]
+            code = trv_customers.item(selectedCustomerIID)["values"][0]
+
+            editWindow = Tk()
+            editWindow.title("Edit Customer")
+            editWindow.iconbitmap(icon_path)
+
+            editCustomerFrame = defaultFrame(editWindow, "Edit Customer", 0, 0)
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select first_name, last_name, address, phone from customers WHERE customer_code={int(code)}")
+            customer_info_tuple_list = cursor.fetchall()
+
+            f_name_edit = defaultEntry(
+                editCustomerFrame, "First Name", 0, 0, 30)
+            l_name_edit = defaultEntry(
+                editCustomerFrame, "Last Name", 1, 0, 30)
+            address_edit = defaultEntry(editCustomerFrame, "Address", 2, 0, 30)
+            phone_edit = defaultEntry(editCustomerFrame, "Phone", 3, 0, 30)
+
+            f_name_edit.insert(0, customer_info_tuple_list[0][0])
+            l_name_edit.insert(0, customer_info_tuple_list[0][1])
+            address_edit.insert(0, customer_info_tuple_list[0][2])
+            phone_edit.insert(0, customer_info_tuple_list[0][3])
+
+            def editAndSaveCustomer():
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"update customers set first_name='{f_name_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set last_name='{l_name_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set address='{address_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set phone='{phone_edit.get()}' where customer_code={int(code)}")
+
+                resposne = messagebox.askyesno(
+                    title="Confirm Edit", message="Are you sure you want to edit this customer's information?")
+                if resposne == True:
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo(
+                        title="Edit Customer successfully", message="Customer is updated successfully.")
+                    updateCustomersList()
+                    editWindow.destroy()
+
+                else:
+                    return
+
+            save_edit_button = defaultButton(
+                editCustomerFrame, "Save Changes", 4, 1, W+E, command=editAndSaveCustomer)
+
+            editWindow.mainloop()
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You did not select a customer from the list.")
+
+    editCustomerFromCustomerListButton = defaultButton(
+        customerListFrame_customers, "Edit selected Customer", 1, 1, W+E, command=editCustomerFromCustomerList)
+
+
+#------------------------ Create a function to show the list of customers after searching --------------------------------#
+
+
+#------------------------ Customer Adding Frame ------------------------#
+
+customerAddFrame_customers = defaultFrame(
+    customerFrame, "Add New Customer", 0, 0)
+
+
+customer_first_name_Entry_customers = defaultEntry(
+    customerAddFrame_customers, "First Name", 0, 0, 20)
+customer_last_name_Entry_customers = defaultEntry(
+    customerAddFrame_customers, "Last Name", 1, 0, 20)
+customer_address_Entry_customers = defaultEntry(
+    customerAddFrame_customers, "Address", 2, 0, 20)
+customer_phone_Entry_customers = defaultEntry(
+    customerAddFrame_customers, "Phone", 3, 0, 20)
+
+
+def addCustomer_customers():
+    try:
+        def getCustomerCode():
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            new_code = randint(100000, 999999)
+
+            cursor.execute("select customer_code from customers")
+            code_tuple_list = cursor.fetchall()
+            code_list = []
+            for code in code_tuple_list:
+                code_list.append(code[0])
+
+            if new_code not in code_list:
+                return new_code
+            else:
+                getCustomerCode()
+
+            conn.commit()
+            conn.close()
+
+        customer_f_Name = customer_first_name_Entry_customers.get().capitalize()
+        customer_l_name = customer_last_name_Entry_customers.get().capitalize()
+        customer_address = customer_address_Entry_customers.get().capitalize()
+        customer_phone = customer_phone_Entry_customers.get()
+        customer_code = getCustomerCode()
+
+        if customer_f_Name == "" or customer_l_name == "" or customer_address == "" or customer_phone == "":
+            messagebox.showerror(
+                title="Insert Error",
+                message="Pleae insert all the information with valid input.")
+        else:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute("INSERT INTO customers(customer_code, first_name, last_name, address, phone) VALUES (?,?,?,?,?)",
+                           (int(customer_code), customer_f_Name,
+                            customer_l_name, customer_address, customer_phone))
+
+            resposne = messagebox.askyesno(
+                title="Confirm Save Customer", message="Are you sure you want to save this customer?")
+
+            if resposne == True:
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo(
+                    title="Save successfull", message=f"The customer has been saved successfully. The new customer code is {customer_code}.")
+
+                customer_first_name_Entry_customers.delete(0, END)
+                customer_last_name_Entry_customers.delete(0, END)
+                customer_address_Entry_customers.delete(0, END)
+                customer_phone_Entry_customers.delete(0, END)
+
+                updateCustomersList()
+            else:
+                return
+
+    except Exception as identifier:
+        messagebox.showerror(title="Customer Error",
+                             message="There is a error to add the customer.")
+
+
+add_customer_button_customers = defaultButton(
+    customerAddFrame_customers, "Add Customer", 4, 1, W+E, command=addCustomer_customers)
+
+
+#------------------------ Showing Customer list Frame --------------------------------#
+
+updateCustomersList()
+
+#------------------------ Search Customer Frame --------------------------------#
+
+searchCustomerFrame_customers = defaultFrame(
+    customerFrame, "Search by name, address or phone", 1, 0)
+
+searchCustomerEntry_customers = defaultEntry(
+    searchCustomerFrame_customers, "Search Customer", 0, 0, 20)
+
+
+def searchCustomer():
+    query = searchCustomerEntry_customers.get()
+
+    trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
+                                 show="headings", height=20, padding=5, style="Custom.Treeview")
+    trv_customers.grid(row=0, column=0, columnspan=2)
+
+    trv_customers.heading(1, text='Code')
+    trv_customers.heading(2, text='First Name')
+    trv_customers.heading(3, text='Last Name')
+    trv_customers.heading(4, text='Address')
+    trv_customers.heading(5, text='Phone')
+
+    trv_customers.column(1, anchor=CENTER, width=150)
+    trv_customers.column(2, anchor=CENTER, width=150)
+    trv_customers.column(3, anchor=CENTER, width=150)
+    trv_customers.column(4, anchor=CENTER, width=150)
+    trv_customers.column(5, anchor=CENTER, width=150)
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        f"select customer_code, first_name, last_name, address, phone from customers where first_name like '%{query}%' or last_name like '%{query}%' or address like '%{query}%' or phone like '%{query}%' order by ID desc")
+    customers_tuple_list = cursor.fetchall()
+
+    for i in customers_tuple_list:
+        trv_customers.insert("", "end", values=i)
+    conn.commit()
+    conn.close()
+
+    def deleteCustomerFromCustomerList():
+        try:
+            selectedCustomerIID = trv_customers.selection()[0]
+            code = trv_customers.item(selectedCustomerIID)["values"][0]
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"DELETE FROM customers WHERE customer_code={int(code)}")
+
+            resposne = messagebox.askyesno(
+                title="Confirm delete customer", message="Are you sure you want to delete this customer?")
+            if resposne == True:
+                conn.commit()
+                conn.close()
+                trv_customers.delete(*trv_customers.get_children())
+                updateCustomersList()
+            else:
+                return
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
+
+            trv_customers.delete(*trv_customers.get_children())
+            updateCustomersList()
+
+    deleteCustomerFromCustomerListButton = defaultButton(
+        customerListFrame_customers, "Delete selected Customer", 1, 0, W+E, command=deleteCustomerFromCustomerList)
+
+    def editCustomerFromCustomerList():
+        try:
+            selectedCustomerIID = trv_customers.selection()[0]
+            code = trv_customers.item(selectedCustomerIID)["values"][0]
+
+            editWindow = Tk()
+            editWindow.title("Edit Customer")
+            editWindow.iconbitmap(icon_path)
+
+            editCustomerFrame = defaultFrame(editWindow, "Edit Customer", 0, 0)
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select first_name, last_name, address, phone from customers WHERE customer_code={int(code)}")
+            customer_info_tuple_list = cursor.fetchall()
+
+            f_name_edit = defaultEntry(
+                editCustomerFrame, "First Name", 0, 0, 30)
+            l_name_edit = defaultEntry(
+                editCustomerFrame, "Last Name", 1, 0, 30)
+            address_edit = defaultEntry(editCustomerFrame, "Address", 2, 0, 30)
+            phone_edit = defaultEntry(editCustomerFrame, "Phone", 3, 0, 30)
+
+            f_name_edit.insert(0, customer_info_tuple_list[0][0])
+            l_name_edit.insert(0, customer_info_tuple_list[0][1])
+            address_edit.insert(0, customer_info_tuple_list[0][2])
+            phone_edit.insert(0, customer_info_tuple_list[0][3])
+
+            def editAndSaveCustomer():
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"update customers set first_name='{f_name_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set last_name='{l_name_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set address='{address_edit.get().capitalize()}' where customer_code={int(code)}")
+                cursor.execute(
+                    f"update customers set phone='{phone_edit.get()}' where customer_code={int(code)}")
+
+                resposne = messagebox.askyesno(
+                    title="Confirm Edit", message="Are you sure you want to edit this customer's information?")
+                if resposne == True:
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo(
+                        title="Edit Customer successfully", message="Customer is updated successfully.")
+                    updateCustomersList()
+                    editWindow.destroy()
+
+                else:
+                    return
+
+            save_edit_button = defaultButton(
+                editCustomerFrame, "Save Changes", 4, 1, W+E, command=editAndSaveCustomer)
+
+            editWindow.mainloop()
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You did not select a customer from the list.")
+
+    editCustomerFromCustomerListButton = defaultButton(
+        customerListFrame_customers, "Edit selected Customer", 1, 1, W+E, command=editCustomerFromCustomerList)
+
+
+searchCustomerButton_customers = defaultButton(
+    searchCustomerFrame_customers, "Search", 1, 1, W+E, command=searchCustomer)
+
+
+def resetCustomerList():
+    updateCustomersList()
+
+
+resetCustomerList_customers = defaultButton(
+    searchCustomerFrame_customers, "Reset", 1, 0, W+E, command=resetCustomerList)
+
+"""
+
+Customer End
+
+
+"""
 
 conn.commit()
 

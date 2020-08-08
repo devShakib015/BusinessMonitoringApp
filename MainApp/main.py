@@ -5,10 +5,12 @@ import os
 import sqlite3
 from random import randint
 
+from reportlab.pdfgen import canvas
+
 root = Tk()
 root.title("Business Management")
-right = 1280  # root.winfo_screenwidth()  # 1280  #
-down = 720  # root.winfo_screenheight()  # 720  #
+right = root.winfo_screenwidth()  # 1280  #
+down = root.winfo_screenheight()  # 720  #
 # root.geometry(f"{right}x{down}")
 # root.geometry(f"{right}x{down}")
 
@@ -30,7 +32,7 @@ root.geometry(f"{right}x{down}+{x}+{y}")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(BASE_DIR, "main.db")
-icon_path = os.path.join(BASE_DIR, "bma.ico")
+icon_path = os.path.join(BASE_DIR, "b.ico")
 
 root.iconbitmap(icon_path)
 
@@ -45,7 +47,7 @@ cursor = conn.cursor()
 def defaultFrame(parent, caption, row, column, **options):
     frame = LabelFrame(parent, text=caption, padx=20,
                        pady=20, font=f"Courier {fontSize} bold")
-    frame.grid(row=row, column=column, padx=20, pady=20, **options)
+    frame.grid(row=row, column=column, padx=20, pady=20, **options, sticky=W+E)
     return frame
 
 #------------------------ Default Entry Function ----------------------------------------#
@@ -74,6 +76,7 @@ def defaultButton(parent, caption, row, column, sticky, **options):
 #------------------------ Creating notebook --------------------------------#
 
 noteStyler = ttk.Style()
+
 # Import the Notebook.tab element from the default theme
 noteStyler.element_create('Plain.Notebook.tab', "from", 'default')
 # Redefine the TNotebook Tab layout to use the new element
@@ -86,20 +89,22 @@ noteStyler.layout("TNotebook.Tab",
                                                                                        'sticky': 'nswe'})],
                                                                   'sticky': 'nswe'})],
                                            'sticky': 'nswe'})])
-noteStyler.configure("TNotebook", background="#2e2d2d",
-                     tabposition='wn', tabmargins=[3, 3, 5, 0])
 
-noteStyler.configure("TNotebook.Tab", background="#424242", width=12, foreground="white", relief="flat", font=(
-    "courier", fontSize, "bold"),  padding=[10, 5, 3, 5])
+noteStyler.configure("TNotebook", background="#161C22",
+                     tabposition='wn', tabmargins=[0, 0, 0, 0])
+
+noteStyler.configure("TNotebook.Tab", background="#204051", width=12, foreground="white", relief=GROOVE, font=(
+    "times", int(0.00829*float(right))),  padding=[10, 10, 10, 10])
 
 noteStyler.map("TNotebook.Tab", background=[
-               ("selected", "#67c392")], foreground=[("selected", "black")])
+               ("selected", "#006a71")], foreground=[("selected", "white")])
 
 
-notebook = ttk.Notebook(root, padding=3)
-notebook.pack()
+notebook = ttk.Notebook(root, padding=0)
+notebook.pack(fill="both", expand=1)
 
-homeFrame = Frame(notebook, width=right, height=down, pady=2, padx=6)
+homeFrame = Frame(notebook, width=right, height=down,
+                  pady=5, padx=10)
 homeFrame.pack(fill="both", expand=1)
 
 customerFrame = Frame(notebook, width=right, height=down, pady=10)
@@ -117,9 +122,10 @@ saleFrame.pack(fill="both", expand=1)
 dueFrame = Frame(notebook, width=right, height=down, pady=10)
 dueFrame.pack(fill="both", expand=1)
 
-notebook.place(relx=0, rely=0, relheight=1, relwidth=1)
 
-notebook.add(homeFrame, text="Home")
+#notebook.place(relx=0, rely=0, relheight=1, relwidth=1)
+
+notebook.add(homeFrame, text="Billings")
 notebook.add(customerFrame, text="Customers")
 notebook.add(productFrame, text="Products")
 notebook.add(stockFrame, text="Stocks")
@@ -141,13 +147,146 @@ style.layout("Custom.Treeview.Heading", [
 ])
 
 style.configure("Custom.Treeview.Heading",
-                background="#67c392", foreground="#fff", relief="flat", font=(
+                background="#006a71", foreground="#fff", relief="flat", font=(
                     "times", fontSize), padding=5)
 style.map("Custom.Treeview.Heading",
           relief=[('active', 'groove'), ('pressed', 'sunken')])
 
 style.configure("Custom.Treeview", font=(
     "Verdana", int(0.0067*float(right))), rowheight=int(0.015625*float(right)))
+
+
+"""
+
+
+Sales Start
+
+
+"""
+
+SalesList_Frame_sales = defaultFrame(saleFrame, "Sales List", 0, 0)
+
+
+def UpdateSalesList_sales():
+
+    trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
+                             show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+    trv_sales.grid(row=0, column=0)
+
+    trv_sales.heading(1, text='Sale Code')
+    trv_sales.heading(2, text='Customer Name')
+    trv_sales.heading(3, text='Customer Phone')
+    trv_sales.heading(4, text='Net Amount')
+    trv_sales.heading(5, text='Paid Amount')
+    trv_sales.heading(6, text='Due Amount')
+    trv_sales.heading(7, text='Date Added')
+
+    trv_sales.column(1, anchor=CENTER,
+                     width=int(0.1000*float(right)))
+    trv_sales.column(2, anchor=CENTER,
+                     width=int(0.1250*float(right)))
+    trv_sales.column(3, anchor=CENTER,
+                     width=int(0.1500*float(right)))
+    trv_sales.column(4, anchor=CENTER,
+                     width=int(0.1000*float(right)))
+    trv_sales.column(5, anchor=CENTER,
+                     width=int(0.1000*float(right)))
+    trv_sales.column(6, anchor=CENTER,
+                     width=int(0.1000*float(right)))
+    trv_sales.column(7, anchor=CENTER,
+                     width=int(0.1500*float(right)))
+
+    conn = sqlite3.connect(db_path)
+
+    cursor = conn.cursor()
+
+    cursor.execute("select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID order by sales.created_at desc")
+    sales_tuple_list = cursor.fetchall()
+
+    for i in sales_tuple_list:
+        trv_sales.insert("", "end", values=i)
+
+    conn.commit()
+
+    conn.close()
+
+
+def salesSearch_sales():
+    SalesSearch_Frame_sales = defaultFrame(
+        saleFrame, "Search by Customer's Name, Phone number, Sale Code or Date", 1, 0)
+
+    Label(SalesSearch_Frame_sales, text="Search Sales: ",
+          font=f"Courier {fontSize} bold").grid(row=0, column=0, sticky=E)
+    searchSales_Entry_sales = ttk.Entry(SalesSearch_Frame_sales, width=entryWidth*5, justify=RIGHT,
+                                        font=f"Courier {fontSize} bold")
+    searchSales_Entry_sales.grid(
+        row=0, column=1, pady=5, sticky=W+E, columnspan=2)
+
+    def searchSales_List_sales():
+
+        trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
+                                 show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+        trv_sales.grid(row=0, column=0)
+
+        trv_sales.heading(1, text='Sale Code')
+        trv_sales.heading(2, text='Customer Name')
+        trv_sales.heading(3, text='Customer Phone')
+        trv_sales.heading(4, text='Net Amount')
+        trv_sales.heading(5, text='Paid Amount')
+        trv_sales.heading(6, text='Due Amount')
+        trv_sales.heading(7, text='Date Added')
+
+        trv_sales.column(1, anchor=CENTER,
+                         width=int(0.1000*float(right)))
+        trv_sales.column(2, anchor=CENTER,
+                         width=int(0.1250*float(right)))
+        trv_sales.column(3, anchor=CENTER,
+                         width=int(0.1500*float(right)))
+        trv_sales.column(4, anchor=CENTER,
+                         width=int(0.1000*float(right)))
+        trv_sales.column(5, anchor=CENTER,
+                         width=int(0.1000*float(right)))
+        trv_sales.column(6, anchor=CENTER,
+                         width=int(0.1000*float(right)))
+        trv_sales.column(7, anchor=CENTER,
+                         width=int(0.1500*float(right)))
+
+        conn = sqlite3.connect(db_path)
+
+        cursor = conn.cursor()
+
+        query = searchSales_Entry_sales.get()
+
+        cursor.execute(
+            f"select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID where sales.sale_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or sales.created_at like '%{query}%' order by sales.created_at desc")
+        sales_tuple_list = cursor.fetchall()
+
+        for i in sales_tuple_list:
+            trv_sales.insert("", "end", values=i)
+
+        conn.commit()
+
+        conn.close()
+
+    searchSales_Button_sales = defaultButton(
+        SalesSearch_Frame_sales, "Search", 1, 2, W+E, command=searchSales_List_sales)
+
+    def resetSales_List_sales():
+        UpdateSalesList_sales()
+
+    resetSales_Button_sales = defaultButton(
+        SalesSearch_Frame_sales, "Reset", 1, 1, W+E, command=resetSales_List_sales)
+
+
+UpdateSalesList_sales()
+salesSearch_sales()
+"""
+
+
+Sales END
+
+
+"""
 
 
 """
@@ -647,7 +786,7 @@ def UpdateHomeAddProduct_Frame():
                                                 cursor = conn.cursor()
 
                                                 new_sale_code = randint(
-                                                    100000, 999999)
+                                                    10_000_000, 99_999_999)
                                                 cursor.execute(
                                                     "select sale_code from sales")
                                                 sale_codes_list = []
@@ -669,11 +808,19 @@ def UpdateHomeAddProduct_Frame():
 
                                             customer_id = getCustomerID_home()
 
+                                            totalAmount_trv_home = getTrvTotal_home()
+
                                             sale_amount = net_total_home
+
+                                            discount_percentage_applied = ((
+                                                float(totalAmount_trv_home) - float(sale_amount))/float((totalAmount_trv_home)) * 100)
 
                                             paid_amount = float_payment_amount
 
                                             due_amount = due_amount_home
+
+                                            print(totalAmount_trv_home,
+                                                  discount_percentage_applied)
 
                                             conn = sqlite3.connect(db_path)
                                             cursor = conn.cursor()
@@ -713,13 +860,15 @@ def UpdateHomeAddProduct_Frame():
                                                 invoice_items_quantity_list.append(
                                                     i[0])
 
+                                            cursor.execute("")
+
                                             lT = []
                                             for i in range(len(invoice_items_ID_list)):
                                                 lT.append(
-                                                    (invoice_items_ID_list[i], invoice_items_quantity_list[i]))
+                                                    (invoice_items_ID_list[i], invoice_items_quantity_list[i], sale_code))
 
                                             cursor.executemany(
-                                                "insert into stocks_removed(product_ID, quantity) values(?,?)", lT)
+                                                "insert into stocks_removed(product_ID, quantity, sale_code) values(?,?,?)", lT)
 
                                             resposnse = messagebox.askyesno(
                                                 title="Confirm Sale", message="Are you sure to save this sale information in database? After saving this you cannot change. Make sure you are aware about what you are doing.")
@@ -728,8 +877,9 @@ def UpdateHomeAddProduct_Frame():
                                                 conn.commit()
 
                                                 conn.close()
+                                                UpdateSalesList_sales()
                                                 messagebox.showinfo(
-                                                    title="Save Success", message="The information is succesfully saved in database.")
+                                                    title="Save Success", message=f"The information is succesfully saved in database. The sale code is {sale_code}.")
                                                 saveButton_home = defaultButton(
                                                     productsListFrame_home, "Save Invoice", 9, 0, W+E, state="disabled")
 
@@ -739,8 +889,21 @@ def UpdateHomeAddProduct_Frame():
                                         except Exception as identifier:
                                             messagebox.showerror(
                                                 title="Customer Error", message="Please insert customer Information.")
+                                            print(identifier)
 
                                         def printInvoice():
+                                            """
+                                            pdf = canvas.Canvas("Invoice.pdf")
+                                            pdf.drawString(
+                                                100, 800, f"Sale Code: {sale_code}")
+                                            pdf.drawString(
+                                                100, 700, f"Total Amount: {totalAmount_trv_home}")
+                                            pdf.drawString(
+                                                100, 600, f"Discount percentage: {discount_percentage_applied}")
+                                            pdf.drawString(
+                                                100, 500, f"Net Amount: {sale_amount}")
+                                            pdf.save()
+                                            """
 
                                             customerCodeEntry_home.config(
                                                 state="enabled")
@@ -868,6 +1031,8 @@ def UpdateHomeAddProduct_Frame():
     trv_home = ttk.Treeview(productsListFrame_home, columns=(1, 2, 3, 4),
                             show="headings", height=int(0.00700*float(right)), padding=5, style="Custom.Treeview")
     trv_home.grid(row=0, column=0, columnspan=2)
+
+    #trv_home.tag_bind('ttk', '<1>', itemClicked)
 
     trv_home.heading(1, text='Product')
     trv_home.heading(2, text='Price')
@@ -1048,9 +1213,9 @@ def updateStockList_stocks():
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(stock_ID)}")
+                    f"update stocks set Quantity={int(quantity_edit_stocks.get())} where ID={int(stock_ID)}")
                 cursor.execute(
-                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(stock_ID)}")
+                    f"update stocks set Price={float(price_edit_stocks.get())} where ID={int(stock_ID)}")
 
                 resposne = messagebox.askyesno(
                     title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
@@ -1060,7 +1225,9 @@ def updateStockList_stocks():
 
                     messagebox.showinfo(
                         title="Edit stock successfully", message="Stock is updated successfully.")
-                    updateCustomersList()
+                    trv_stocks.delete(*trv_stocks.get_children())
+                    updateStockList_stocks()
+                    UpdateHomeAddProduct_Frame()
                     editWindow.destroy()
 
                 else:
@@ -1076,7 +1243,7 @@ def updateStockList_stocks():
                 title="Selection error", message="You did not select a stock from the list.")
 
     editStockfromStockList = defaultButton(
-        stockList_frame_stocks, "Edit selected Customer", 1, 1, W+E, command=editstockfromstocklist)
+        stockList_frame_stocks, "Edit selected Stock", 1, 1, W+E, command=editstockfromstocklist)
 
 
 updateStockList_stocks()
@@ -1171,6 +1338,158 @@ def updateStockAdd():
 
 
 updateStockAdd()
+
+
+def searchStocks_stocks():
+
+    trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5),
+                              show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+    trv_stocks.grid(row=0, column=0, columnspan=2)
+
+    trv_stocks.heading(1, text="stock ID")
+    trv_stocks.heading(2, text='Product Name')
+    trv_stocks.heading(3, text='Quantity')
+    trv_stocks.heading(4, text='Price')
+    trv_stocks.heading(5, text='Added Date')
+
+    trv_stocks.column(1, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(2, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(3, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(4, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(5, anchor=CENTER, width=int(0.120*float(right)))
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    query = searchStocksEntry_stocks.get()
+
+    cursor.execute(
+        f"select stocks.ID, products.product, stocks.Quantity, stocks.price, stocks.created_at from stocks inner join products on stocks.product_id=products.ID where products.product like '%{query}%' or stocks.created_at like '%{query}%' order by stocks.created_at desc")
+    stocks_tuple_list = cursor.fetchall()
+
+    for i in stocks_tuple_list:
+        trv_stocks.insert("", "end", values=i)
+    conn.commit()
+    conn.close()
+
+    def deleteStockfromstocklist():
+        try:
+            selectedStockIID = trv_stocks.selection()[0]
+            stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"DELETE FROM stocks WHERE ID={int(stock_ID)}")
+
+            resposne = messagebox.askyesno(
+                title="Confirm delete stock", message="Are you sure you want to delete this stock?")
+            if resposne == True:
+                conn.commit()
+                conn.close()
+                trv_stocks.delete(*trv_stocks.get_children())
+                updateStockList_stocks()
+                UpdateHomeAddProduct_Frame()
+            else:
+                return
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
+
+            trv_stocks.delete(*trv_stocks.get_children())
+            updateStockList_stocks()
+            UpdateHomeAddProduct_Frame()
+
+    deleteStockfromstocklist = defaultButton(
+        stockList_frame_stocks, "Delete selected stock", 1, 0, W+E, command=deleteStockfromstocklist)
+
+    def editstockfromstocklist():
+        try:
+            selectedStockIID = trv_stocks.selection()[0]
+            stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
+            stock_name = trv_stocks.item(selectedStockIID)["values"][1]
+
+            editWindow = Tk()
+            editWindow.title("Edit Stock")
+            editWindow.iconbitmap(icon_path)
+
+            editStockFrame = defaultFrame(
+                editWindow, "Edit Stock", 0, 0)
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select Quantity, Price from stocks WHERE ID={int(stock_ID)}")
+            stock_info_tuple_list = cursor.fetchall()
+
+            name_edit_stocks = defaultEntry(
+                editStockFrame, "Name", 0, 0, 30)
+            quantity_edit_stocks = defaultEntry(
+                editStockFrame, "Quantity", 1, 0, 30)
+            price_edit_stocks = defaultEntry(
+                editStockFrame, "Price", 2, 0, 30)
+
+            name_edit_stocks.insert(0, stock_name)
+            quantity_edit_stocks.insert(0, stock_info_tuple_list[0][0])
+            price_edit_stocks.insert(0, stock_info_tuple_list[0][1])
+
+            name_edit_stocks.config(state="disabled")
+
+            def editAndSaveStock():
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(stock_ID)}")
+                cursor.execute(
+                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(stock_ID)}")
+
+                resposne = messagebox.askyesno(
+                    title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
+                if resposne == True:
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo(
+                        title="Edit stock successfully", message="Stock is updated successfully.")
+                    updateStockList_stocks()
+                    editWindow.destroy()
+
+                else:
+                    return
+
+            save_edit_button = defaultButton(
+                editStockFrame, "Save Changes", 4, 1, W+E, command=editAndSaveStock)
+
+            editWindow.mainloop()
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You did not select a stock from the list.")
+
+    editStockfromStockList = defaultButton(
+        stockList_frame_stocks, "Edit selected Customer", 1, 1, W+E, command=editstockfromstocklist)
+
+
+stockSearch_frame_stocks = defaultFrame(
+    stockFrame, "Search by product name", 1, 0)
+
+searchStocksEntry_stocks = defaultEntry(
+    stockSearch_frame_stocks, "Search Stock", 0, 0, entryWidth)
+
+searchStocksButton_stocks = defaultButton(
+    stockSearch_frame_stocks, "Search Stock", 1, 1, W+E, command=searchStocks_stocks)
+
+
+def resetStocks_stocks():
+    updateStockList_stocks()
+
+
+resetStocksButton_stocks = defaultButton(
+    stockSearch_frame_stocks, "Reset Stock", 1, 0, W+E, command=resetStocks_stocks)
 
 
 """

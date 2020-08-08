@@ -16,10 +16,9 @@ down = 720  # root.winfo_screenheight()  # 720  #
 #------------------------ Default width and height --------------------------------#
 
 entryWidth = int(0.01342*float(right))
-print(entryWidth)
+
 
 fontSize = int(0.00829*float(right))
-print(fontSize)
 
 
 # width = root.winfo_width()
@@ -27,8 +26,6 @@ print(fontSize)
 x = (root.winfo_screenwidth() // 2) - (right // 2)
 y = (root.winfo_screenheight() // 2) - (down // 2)
 root.geometry(f"{right}x{down}+{x}+{y}")
-
-print(x, y)
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -716,8 +713,6 @@ def UpdateHomeAddProduct_Frame():
                                                 invoice_items_quantity_list.append(
                                                     i[0])
 
-                                            print(invoice_items_ID_list)
-                                            print(invoice_items_quantity_list)
                                             lT = []
                                             for i in range(len(invoice_items_ID_list)):
                                                 lT.append(
@@ -1008,8 +1003,6 @@ def updateStockList_stocks():
             messagebox.showerror(
                 title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
 
-            print(identifier)
-
             trv_stocks.delete(*trv_stocks.get_children())
             updateStockList_stocks()
             UpdateHomeAddProduct_Frame()
@@ -1055,9 +1048,9 @@ def updateStockList_stocks():
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(selected_product_id)}")
+                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(stock_ID)}")
                 cursor.execute(
-                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(selected_product_id)}")
+                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(stock_ID)}")
 
                 resposne = messagebox.askyesno(
                     title="Confirm Edit", message="Are you sure you want to edit this stock's information?")

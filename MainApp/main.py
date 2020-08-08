@@ -7,8 +7,8 @@ from random import randint
 
 root = Tk()
 root.title("Business Management")
-right = 1280  # root.winfo_screenwidth()
-down = 720  # root.winfo_screenheight()
+right = 1280  # root.winfo_screenwidth()  # 1280  #
+down = 720  # root.winfo_screenheight()  # 720  #
 # root.geometry(f"{right}x{down}")
 # root.geometry(f"{right}x{down}")
 
@@ -75,12 +75,6 @@ def defaultButton(parent, caption, row, column, sticky, **options):
 
 
 #------------------------ Creating notebook --------------------------------#
-COLOR_1 = 'black'
-COLOR_2 = 'white'
-COLOR_3 = 'red'
-COLOR_4 = '#2E2E2E'
-COLOR_5 = '#8A4B08'
-COLOR_6 = '#DF7401'
 
 noteStyler = ttk.Style()
 # Import the Notebook.tab element from the default theme
@@ -95,9 +89,14 @@ noteStyler.layout("TNotebook.Tab",
                                                                                        'sticky': 'nswe'})],
                                                                   'sticky': 'nswe'})],
                                            'sticky': 'nswe'})])
-noteStyler.configure("TNotebook", background="#2e2d2d", tabposition='wn')
-noteStyler.configure("TNotebook.Tab", background="#424242", width=10, foreground="white", relief="sunken", font=(
-    "courier", fontSize, "bold"),  padding=5)
+noteStyler.configure("TNotebook", background="#2e2d2d",
+                     tabposition='wn', tabmargins=[3, 3, 5, 0])
+
+noteStyler.configure("TNotebook.Tab", background="#424242", width=12, foreground="white", relief="flat", font=(
+    "courier", fontSize, "bold"),  padding=[10, 5, 3, 5])
+
+noteStyler.map("TNotebook.Tab", background=[
+               ("selected", "#67c392")], foreground=[("selected", "black")])
 
 
 notebook = ttk.Notebook(root, padding=3)
@@ -226,6 +225,8 @@ def UpdateHomeAddProduct_Frame():
             product_stock_updated = 0
 
         product_stock = int(product_stock_updated) - int(product_stock_removed)
+        if product_stock < 0:
+            product_stock = 0
 
         if product_stock == 0:
             productQuantityEntry_home.insert(0, "Stock is empty")
@@ -946,6 +947,239 @@ Stocks Start
 """
 
 
+stockAdd_frame_stocks = defaultFrame(stockFrame, "Add stocks", 0, 0)
+stockList_frame_stocks = defaultFrame(
+    stockFrame, "List of stocks", 0, 1, rowspan=2)
+
+
+def updateStockList_stocks():
+
+    trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5),
+                              show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+    trv_stocks.grid(row=0, column=0, columnspan=2)
+
+    trv_stocks.heading(1, text="stock ID")
+    trv_stocks.heading(2, text='Product Name')
+    trv_stocks.heading(3, text='Quantity')
+    trv_stocks.heading(4, text='Price')
+    trv_stocks.heading(5, text='Added Date')
+
+    trv_stocks.column(1, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(2, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(3, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(4, anchor=CENTER, width=int(0.100*float(right)))
+    trv_stocks.column(5, anchor=CENTER, width=int(0.120*float(right)))
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "select stocks.ID, products.product, stocks.Quantity, stocks.price, stocks.created_at from stocks inner join products where stocks.product_id=products.ID order by stocks.created_at desc")
+    stocks_tuple_list = cursor.fetchall()
+
+    for i in stocks_tuple_list:
+        trv_stocks.insert("", "end", values=i)
+    conn.commit()
+    conn.close()
+
+    def deleteStockfromstocklist():
+        try:
+            selectedStockIID = trv_stocks.selection()[0]
+            stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"DELETE FROM stocks WHERE ID={int(stock_ID)}")
+
+            resposne = messagebox.askyesno(
+                title="Confirm delete stock", message="Are you sure you want to delete this stock?")
+            if resposne == True:
+                conn.commit()
+                conn.close()
+                trv_stocks.delete(*trv_stocks.get_children())
+                updateStockList_stocks()
+                UpdateHomeAddProduct_Frame()
+            else:
+                return
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
+
+            print(identifier)
+
+            trv_stocks.delete(*trv_stocks.get_children())
+            updateStockList_stocks()
+            UpdateHomeAddProduct_Frame()
+
+    deleteStockfromstocklist = defaultButton(
+        stockList_frame_stocks, "Delete selected stock", 1, 0, W+E, command=deleteStockfromstocklist)
+
+    def editstockfromstocklist():
+        try:
+            selectedStockIID = trv_stocks.selection()[0]
+            stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
+            stock_name = trv_stocks.item(selectedStockIID)["values"][1]
+
+            editWindow = Tk()
+            editWindow.title("Edit Stock")
+            editWindow.iconbitmap(icon_path)
+
+            editStockFrame = defaultFrame(
+                editWindow, "Edit Stock", 0, 0)
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select Quantity, Price from stocks WHERE ID={int(stock_ID)}")
+            stock_info_tuple_list = cursor.fetchall()
+
+            name_edit_stocks = defaultEntry(
+                editStockFrame, "Name", 0, 0, 30)
+            quantity_edit_stocks = defaultEntry(
+                editStockFrame, "Quantity", 1, 0, 30)
+            price_edit_stocks = defaultEntry(
+                editStockFrame, "Price", 2, 0, 30)
+
+            name_edit_stocks.insert(0, stock_name)
+            quantity_edit_stocks.insert(0, stock_info_tuple_list[0][0])
+            price_edit_stocks.insert(0, stock_info_tuple_list[0][1])
+
+            name_edit_stocks.config(state="disabled")
+
+            def editAndSaveStock():
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(selected_product_id)}")
+                cursor.execute(
+                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(selected_product_id)}")
+
+                resposne = messagebox.askyesno(
+                    title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
+                if resposne == True:
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo(
+                        title="Edit stock successfully", message="Stock is updated successfully.")
+                    updateCustomersList()
+                    editWindow.destroy()
+
+                else:
+                    return
+
+            save_edit_button = defaultButton(
+                editStockFrame, "Save Changes", 4, 1, W+E, command=editAndSaveStock)
+
+            editWindow.mainloop()
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection error", message="You did not select a stock from the list.")
+
+    editStockfromStockList = defaultButton(
+        stockList_frame_stocks, "Edit selected Customer", 1, 1, W+E, command=editstockfromstocklist)
+
+
+updateStockList_stocks()
+
+
+def getAllProducts():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    PRODUCTS = []
+    cursor.execute("select product from products")
+    products = cursor.fetchall()
+    for product in products:
+        PRODUCTS.append(product[0])
+    conn.commit()
+    conn.close()
+    return PRODUCTS
+
+
+def updateStockAdd():
+    def productCombo(event):
+        product = productCombo_home.get()
+
+        productNameEntry_stocks.config(state="enabled")
+
+        productNameEntry_stocks.delete(0, END)
+        productPriceEntry_stocks.delete(0, END)
+        productQuantityEntry_stocks.delete(0, END)
+
+        productNameEntry_stocks.insert(0, product)
+        productNameEntry_stocks.config(state="disabled")
+
+        conn = sqlite3.connect(db_path)
+
+        cursor = conn.cursor()
+
+        cursor.execute(f"select ID from products where product='{product}'")
+        product_ID = cursor.fetchall()[0][0]
+
+        def addStock():
+            try:
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute("INSERT INTO stocks(product_id, Quantity, Price) VALUES (?, ?, ?)",
+                               (product_ID, int(productQuantityEntry_stocks.get()), float(
+                                productPriceEntry_stocks.get()))
+                               )
+
+                resposne = messagebox.askyesno(
+                    title="Confirm adding stock", message="Are you sure you want to add this stock?")
+                if resposne == True:
+                    conn.commit()
+                    conn.close()
+                    updateStockList_stocks()
+                    productNameEntry_stocks.delete(0, END)
+                    productPriceEntry_stocks.delete(0, END)
+                    productQuantityEntry_stocks.delete(0, END)
+
+                else:
+                    return
+
+            except Exception as identifier:
+                messagebox.showerror(
+                    title="Adding stock error", message="Please insert valid information for the stock.")
+
+        stockAdd_button = defaultButton(
+            stockAdd_frame_stocks, "Add stock", 4, 1, W+E, command=addStock)
+
+        conn.commit()
+
+        conn.close()
+
+    allProducts = getAllProducts()
+    choose_product_label = Label(stockAdd_frame_stocks, text="Product:",
+                                 font=f"Courier {fontSize} bold").grid(row=0, column=0, sticky=E, padx=10)
+    productCombo_home = ttk.Combobox(stockAdd_frame_stocks, value=allProducts, width=entryWidth,
+                                     font=f"Courier {fontSize} bold")
+    productCombo_home.set("Choose one...")
+    productCombo_home.bind("<<ComboboxSelected>>", productCombo)
+    productCombo_home.grid(row=0, column=1, pady=5)
+
+    productNameEntry_stocks = defaultEntry(
+        stockAdd_frame_stocks, "Name", 1, 0, entryWidth, state="disabled")
+    productPriceEntry_stocks = defaultEntry(
+        stockAdd_frame_stocks, "Price (BDT)", 3, 0, entryWidth)
+    productQuantityEntry_stocks = defaultEntry(
+        stockAdd_frame_stocks, "Quantity", 2, 0, entryWidth)
+
+    stockAdd_button = defaultButton(
+        stockAdd_frame_stocks, "Add stock", 4, 1, W+E, state="disabled")
+
+
+updateStockAdd()
+
+
 """
 
 
@@ -1410,6 +1644,7 @@ def updateProductsList():
                 trv_products.delete(*trv_products.get_children())
                 updateProductsList()
                 UpdateHomeAddProduct_Frame()
+                updateStockAdd()
             else:
                 return
 
@@ -1419,6 +1654,7 @@ def updateProductsList():
 
             trv_products.delete(*trv_products.get_children())
             updateProductsList()
+            updateStockAdd()
 
     deleteProductFromProductListButton = defaultButton(
         productListFrame_products, "Delete selected product", 1, 0, W+E, command=deleteProductFromProductList)
@@ -1474,6 +1710,7 @@ def updateProductsList():
                     editWindow.destroy()
                     updateProductsList()
                     UpdateHomeAddProduct_Frame()
+                    updateStockAdd()
 
                 else:
                     return
@@ -1543,6 +1780,7 @@ def addProduct_products():
 
                 updateProductsList()
                 UpdateHomeAddProduct_Frame()
+                updateStockAdd()
 
             else:
                 return

@@ -122,15 +122,21 @@ saleFrame.pack(fill="both", expand=1)
 dueFrame = Frame(notebook, width=right, height=down, pady=10)
 dueFrame.pack(fill="both", expand=1)
 
+statsFrame = Frame(notebook, width=right, height=down, pady=100, padx=100)
+statsFrame.pack(fill="both", expand=1)
+
 
 # notebook.place(relx=0, rely=0, relheight=1, relwidth=1)
 
 notebook.add(homeFrame, text="Billings")
 notebook.add(customerFrame, text="Customers")
+notebook.add(dueFrame, text="Pay Dues")
+notebook.add(saleFrame, text="Sales")
 notebook.add(productFrame, text="Products")
 notebook.add(stockFrame, text="Stocks")
-notebook.add(saleFrame, text="Sales")
-notebook.add(dueFrame, text="Dues")
+notebook.add(statsFrame, text="Statistics")
+
+#notebook.tab(6, tabposition="ne")
 
 
 style = ttk.Style()
@@ -159,35 +165,39 @@ style.configure("Custom.Treeview", font=(
 """
 
 
-Dues Start
+Pay Dues Start
 
 
 """
 
-DueList_frame = defaultFrame(dueFrame, "Dues List", 0, 1)
+
+DueList_frame = defaultFrame(dueFrame, "Paying Dues List", 0, 1, rowspan=2)
 
 
 def updateDueList():
     trv_dues = ttk.Treeview(DueList_frame, columns=(
-        1, 2, 3), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+        1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
     trv_dues.grid(row=0, column=1)
 
-    trv_dues.heading(1, text='Customer Name')
-    trv_dues.heading(2, text='Customer Phone')
-    trv_dues.heading(3, text='Total Due Amount')
+    trv_dues.heading(1, text='Customer Code')
+    trv_dues.heading(2, text='Customer Name')
+    trv_dues.heading(4, text='Customer Phone')
+    trv_dues.heading(4, text='Total Due Amount')
 
     trv_dues.column(1, anchor=CENTER,
-                    width=int(0.1500*float(right)))
+                    width=int(0.1200*float(right)))
     trv_dues.column(2, anchor=CENTER,
                     width=int(0.1500*float(right)))
     trv_dues.column(3, anchor=CENTER,
+                    width=int(0.1500*float(right)))
+    trv_dues.column(4, anchor=CENTER,
                     width=int(0.1200*float(right)))
 
     conn = sqlite3.connect(db_path)
 
     cursor = conn.cursor()
 
-    cursor.execute("select customers.first_name, customers.phone, sum(sales.due_amount) as due_amount from sales INNER JOIN customers on sales.customer_id=customers.ID GROUP By customers.first_name order by due_amount desc")
+    cursor.execute("select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc")
     dues_tuple_list = cursor.fetchall()
 
     for i in dues_tuple_list:
@@ -198,8 +208,140 @@ def updateDueList():
     conn.close()
 
 
+payDues_frame = defaultFrame(dueFrame, "Pay Dues", 0, 0)
+
+
+def payDue_dues():
+
+    customer_code_search_dues_entry = defaultEntry(
+        payDues_frame, "Customer Code", 0, 0, entryWidth)
+    customer_code_entry_dues = defaultEntry(
+        payDues_frame, "Code", 2, 0, entryWidth)
+    customer_Name_entry_dues = defaultEntry(
+        payDues_frame, "Name", 3, 0, entryWidth)
+    customer_Phone_entry_dues = defaultEntry(
+        payDues_frame, "Phone", 4, 0, entryWidth)
+    customer_Net_Dues_entry_dues = defaultEntry(
+        payDues_frame, "Net Due", 5, 0, entryWidth)
+    customer_Pay_Amount_entry_dues = defaultEntry(
+        payDues_frame, "Paying Amount", 6, 0, entryWidth)
+
+    customer_code_entry_dues.config(state="disabled")
+    customer_Name_entry_dues.config(state="disabled")
+    customer_Phone_entry_dues.config(state="disabled")
+    customer_Net_Dues_entry_dues.config(
+        state="disabled", foreground="red")
+
+    def searchCustomer_dues():
+        try:
+
+            customer_code_entry_dues.config(state="enabled")
+            customer_Name_entry_dues.config(state="enabled")
+            customer_Phone_entry_dues.config(state="enabled")
+            customer_Net_Dues_entry_dues.config(
+                state="enabled", foreground="red")
+
+            customer_code_entry_dues.delete(0, END)
+            customer_Name_entry_dues.delete(0, END)
+            customer_Phone_entry_dues.delete(0, END)
+            customer_Net_Dues_entry_dues.delete(0, END)
+
+            code = customer_code_search_dues_entry.get()
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select * from customers where customer_code = {int(code)}")
+            customer_info_dues = cursor.fetchall()
+            c_ID = customer_info_dues[0][0]
+            c_code = customer_info_dues[0][1]
+            c_name = f"{customer_info_dues[0][2]} {customer_info_dues[0][3]}"
+            c_phone = customer_info_dues[0][5]
+
+            cursor.execute(
+                f"select sum(due_amount) from sales where customer_id={int(c_ID)}")
+            customer_sales_info_dues = cursor.fetchall()
+
+            customer_total_due_dues = 0
+
+            if customer_sales_info_dues[0][0] != None:
+                customer_total_due_dues = customer_sales_info_dues[0][0]
+
+            cursor.execute(
+                f"select sum(amount) from duesPaid where customer_id={int(c_ID)}")
+            customer_due_paid_info_dues = cursor.fetchall()
+
+            customer_total_due_paid_dues = 0
+            if customer_due_paid_info_dues[0][0] != None:
+                customer_total_due_paid_dues = customer_due_paid_info_dues[
+                    0][0]
+
+            customer_total_additional_due = customer_total_due_dues - \
+                customer_total_due_paid_dues
+
+            customer_code_entry_dues.insert(0, c_code)
+            customer_Name_entry_dues.insert(0, c_name)
+            customer_Phone_entry_dues.insert(0, c_phone)
+            customer_Net_Dues_entry_dues.insert(
+                0, customer_total_additional_due)
+
+            customer_code_entry_dues.config(state="disabled")
+            customer_Name_entry_dues.config(state="disabled")
+            customer_Phone_entry_dues.config(state="disabled")
+            customer_Net_Dues_entry_dues.config(
+                state="disabled", foreground="red")
+
+            conn.commit()
+            conn.close()
+
+        except Exception as identifier:
+            customer_code_entry_dues.config(state="disabled")
+            customer_Name_entry_dues.config(state="disabled")
+            customer_Phone_entry_dues.config(state="disabled")
+            customer_Net_Dues_entry_dues.config(
+                state="disabled", foreground="red")
+            messagebox.showerror(title="Customer Error",
+                                 message="Please enter valid customer code.")
+
+    customer_code_search_dues_button = defaultButton(
+        payDues_frame, "Search", 1, 1, W+E, command=searchCustomer_dues)
+
+    def payDue_save_dues():
+
+        pay_due_amount = customer_Pay_Amount_entry_dues.get()
+        code = customer_code_search_dues_entry.get()
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            f"select ID from customers where customer_code={int(code)}")
+        c_ID = cursor.fetchone()[0]
+
+        conn.commit()
+
+        cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
+                       (c_ID, float(pay_due_amount)))
+
+        resposne = messagebox.askyesno(
+            title="Confirm Pay Due", message="Are You Sure to Pay this due amount?")
+        if resposne == True:
+            conn.commit()
+            conn.close()
+
+            payDue_dues()
+            updateDueList()
+
+        else:
+            return
+
+    customer_due_pay_amount_save_button = defaultButton(
+        payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
+
+
 DueSearch_frame = defaultFrame(
-    dueFrame, "Search Dues by Customer's name or phone", 0, 0)
+    dueFrame, "Search by Customer's name or phone or code", 1, 0)
 
 
 def SearchDues_frame():
@@ -210,18 +352,21 @@ def SearchDues_frame():
     def updateSearchDues_list():
 
         trv_dues = ttk.Treeview(DueList_frame, columns=(
-            1, 2, 3), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+            1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
         trv_dues.grid(row=0, column=1)
 
-        trv_dues.heading(1, text='Customer Name')
-        trv_dues.heading(2, text='Customer Phone')
-        trv_dues.heading(3, text='Total Due Amount')
+        trv_dues.heading(1, text='Customer Code')
+        trv_dues.heading(2, text='Customer Name')
+        trv_dues.heading(4, text='Customer Phone')
+        trv_dues.heading(4, text='Total Due Amount')
 
         trv_dues.column(1, anchor=CENTER,
-                        width=int(0.1500*float(right)))
+                        width=int(0.1200*float(right)))
         trv_dues.column(2, anchor=CENTER,
                         width=int(0.1500*float(right)))
         trv_dues.column(3, anchor=CENTER,
+                        width=int(0.1500*float(right)))
+        trv_dues.column(4, anchor=CENTER,
                         width=int(0.1200*float(right)))
 
         query = searchDues_dues_entry.get()
@@ -231,7 +376,7 @@ def SearchDues_frame():
         cursor = conn.cursor()
 
         cursor.execute(
-            f"select customers.first_name, customers.phone, sum(sales.due_amount) as due_amount from sales INNER JOIN customers on sales.customer_id=customers.ID where customers.first_name like '%{query}%' or customers.phone like '%{query}%' GROUP By customers.first_name order by due_amount desc")
+            f"select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID where customers.customer_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' order by duesPaid.ID desc")
         dues_tuple_list = cursor.fetchall()
 
         for i in dues_tuple_list:
@@ -251,6 +396,7 @@ def SearchDues_frame():
         DueSearch_frame, "Reset", 1, 0, W+E, command=resetDuesList_dues)
 
 
+payDue_dues()
 updateDueList()
 SearchDues_frame()
 
@@ -920,9 +1066,6 @@ def UpdateHomeAddProduct_Frame():
 
                                             due_amount = due_amount_home
 
-                                            print(totalAmount_trv_home,
-                                                  discount_percentage_applied)
-
                                             conn = sqlite3.connect(db_path)
                                             cursor = conn.cursor()
 
@@ -991,7 +1134,6 @@ def UpdateHomeAddProduct_Frame():
                                         except Exception as identifier:
                                             messagebox.showerror(
                                                 title="Customer Error", message="Please insert customer Information.")
-                                            print(identifier)
 
                                         def printInvoice():
                                             """
@@ -1769,7 +1911,6 @@ def updateCustomersList():
             cursor.execute(
                 f"select sum(sale_amount), sum(paid_amount), sum(due_amount) from sales where customer_id={int(customer_ID_selected)}")
             customer_sales_info_selected = cursor.fetchall()
-            print(customer_sales_info_selected)
 
             customer_total_sales_selected = 0
             customer_total_paid_selected = 0
@@ -1785,7 +1926,6 @@ def updateCustomersList():
             cursor.execute(
                 f"select sum(amount) from duesPaid where customer_id={int(customer_ID_selected)}")
             customer_due_paid_info_selected = cursor.fetchall()
-            print(customer_due_paid_info_selected)
 
             customer_total_due_paid_selected = 0
             if customer_due_paid_info_selected[0][0] != None:
@@ -1860,7 +2000,6 @@ def updateCustomersList():
 
             trv_customers.delete(*trv_customers.get_children())
             updateCustomersList()
-            print(identifier)
 
     detailsCustomersFromCustomersList = defaultButton(
         customerListFrame_customers, "Details", 1, 2, W+E, command=detailsCustomerFromCustomersList)
@@ -2121,7 +2260,6 @@ def searchCustomer():
             cursor.execute(
                 f"select sum(sale_amount), sum(paid_amount), sum(due_amount) from sales where customer_id={int(customer_ID_selected)}")
             customer_sales_info_selected = cursor.fetchall()
-            print(customer_sales_info_selected)
 
             customer_total_sales_selected = 0
             customer_total_paid_selected = 0
@@ -2137,7 +2275,6 @@ def searchCustomer():
             cursor.execute(
                 f"select sum(amount) from duesPaid where customer_id={int(customer_ID_selected)}")
             customer_due_paid_info_selected = cursor.fetchall()
-            print(customer_due_paid_info_selected)
 
             customer_total_due_paid_selected = 0
             if customer_due_paid_info_selected[0][0] != None:
@@ -2212,7 +2349,6 @@ def searchCustomer():
 
             trv_customers.delete(*trv_customers.get_children())
             updateCustomersList()
-            print(identifier)
 
     detailsCustomersFromCustomersList = defaultButton(
         customerListFrame_customers, "Details", 1, 2, W+E, command=detailsCustomerFromCustomersList)
@@ -2829,6 +2965,64 @@ Product End
 
 
 """
+
+
+"""
+
+
+Stats Start
+
+
+"""
+
+
+def stats():
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("select sum(sale_amount), sum(paid_amount) from sales")
+    sales_stats_info = cursor.fetchall()
+    net_sales_sats = 0
+    net_paid_sats = 0
+
+    if sales_stats_info[0][0] != None or sales_stats_info[0][1] != None:
+        net_sales_sats = sales_stats_info[0][0]
+        net_paid_sats = sales_stats_info[0][1]
+
+    cursor.execute("select sum(amount) from duesPaid")
+    dusePaid_stats_info = cursor.fetchall()
+    net_duesPaid_stats = 0
+    if dusePaid_stats_info[0][0] != None:
+        net_duesPaid_stats = dusePaid_stats_info[0][0]
+
+    total_payment_get_stats = net_paid_sats + net_duesPaid_stats
+
+    total_due_stats = net_sales_sats - total_payment_get_stats
+
+    stats_label = Label(statsFrame, text="STATISTICS",
+                        font="verdana 40 bold underline", foreground="green").grid(row=0, column=0, pady=50, columnspan=2)
+
+    total_sales_stats_entry = defaultEntry(
+        statsFrame, "Total Sales", 1, 0, entryWidth)
+    total_payment_get_stats_entry = defaultEntry(
+        statsFrame, "Total Payment Get", 2, 0, entryWidth)
+    total_due_stats_entry = defaultEntry(
+        statsFrame, "Total Dues", 3, 0, entryWidth)
+
+    total_sales_stats_entry.insert(0, net_sales_sats)
+    total_payment_get_stats_entry.insert(0, total_payment_get_stats)
+    total_due_stats_entry.insert(0, total_due_stats)
+
+    total_sales_stats_entry.config(state="disabled")
+    total_payment_get_stats_entry.config(state="disabled")
+    total_due_stats_entry.config(state="disabled")
+
+    conn.commit()
+    conn.close()
+
+
+stats()
 
 conn.commit()
 

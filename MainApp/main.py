@@ -10,8 +10,8 @@ from reportlab.pdfgen import canvas
 
 root = Tk()
 root.title("Business Management")
-right = root.winfo_screenwidth()  # 1280  #
-down = root.winfo_screenheight()  # 720  #
+right = 1280  # root.winfo_screenwidth()  # 1280  #
+down = 720  # root.winfo_screenheight()  # 720  #
 # root.geometry(f"{right}x{down}")
 # root.geometry(f"{right}x{down}")
 
@@ -457,33 +457,36 @@ def payDue_dues():
         payDues_frame, "Search", 1, 1, W+E, command=searchCustomer_dues)
 
     def payDue_save_dues():
+        try:
+            pay_due_amount = customer_Pay_Amount_entry_dues.get()
+            code = customer_code_search_dues_entry.get()
 
-        pay_due_amount = customer_Pay_Amount_entry_dues.get()
-        code = customer_code_search_dues_entry.get()
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+            cursor.execute(
+                f"select ID from customers where customer_code={int(code)}")
+            c_ID = cursor.fetchone()[0]
 
-        cursor.execute(
-            f"select ID from customers where customer_code={int(code)}")
-        c_ID = cursor.fetchone()[0]
-
-        conn.commit()
-
-        cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
-                       (c_ID, float(pay_due_amount)))
-
-        resposne = messagebox.askyesno(
-            title="Confirm Pay Due", message="Are You Sure to Pay this due amount?")
-        if resposne == True:
             conn.commit()
-            conn.close()
 
-            payDue_dues()
-            updateDueList()
+            cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
+                           (c_ID, float(pay_due_amount)))
 
-        else:
-            return
+            resposne = messagebox.askyesno(
+                title="Confirm Pay Due", message="Are You Sure to Pay this due amount?")
+            if resposne == True:
+                conn.commit()
+                conn.close()
+
+                payDue_dues()
+                updateDueList()
+
+            else:
+                return
+        except Exception as identifier:
+            messagebox.showerror(title="Customer Error",
+                                 message="Please enter valid Information.")
 
     customer_due_pay_amount_save_button = defaultButton(
         payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
@@ -604,6 +607,111 @@ def UpdateSalesList_sales():
 
     conn.close()
 
+    def getSalesInformationSelected():
+        try:
+            selectedSalesIID = trv_sales.selection()[0]
+            salesCode = trv_sales.item(selectedSalesIID)["values"][0]
+            customer_name_selected = trv_sales.item(
+                selectedSalesIID)["values"][1]
+            customer_phone_selected = trv_sales.item(selectedSalesIID)[
+                "values"][2]
+            net_total_selected = trv_sales.item(selectedSalesIID)["values"][3]
+            paid_total_selected = trv_sales.item(selectedSalesIID)["values"][4]
+            due_total_selected = trv_sales.item(selectedSalesIID)["values"][5]
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select products.product,products.weight, products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={salesCode}")
+            sales_product_information = cursor.fetchall()
+
+            total_sales_without_discounts = 0.0
+            for i in sales_product_information:
+                total_sales_without_discounts += float(i[4])
+
+            discount_selected = ((total_sales_without_discounts -
+                                  float(net_total_selected)) / total_sales_without_discounts) * 100.0
+
+            conn.commit()
+            conn.close()
+
+            salesDetails_window = Tk()
+            salesDetails_window.title(f"{salesCode} Information")
+            salesDetails_window.iconbitmap(icon_path)
+
+            salesInformationFrame = defaultFrame(
+                salesDetails_window, "Sales Information", 0, 0)
+
+            scEntry = defaultEntry(salesInformationFrame,
+                                   "Sales Code", 0, 0, entryWidth)
+            cnEntry = defaultEntry(salesInformationFrame,
+                                   "Customer Name", 1, 0, entryWidth)
+            cpEntry = defaultEntry(salesInformationFrame,
+                                   "Customer Phone", 2, 0, entryWidth)
+            tsEntry = defaultEntry(salesInformationFrame,
+                                   "Total Sales", 4, 0, entryWidth)
+            dcEntry = defaultEntry(salesInformationFrame,
+                                   "Discount", 5, 0, entryWidth)
+            ntEntry = defaultEntry(salesInformationFrame,
+                                   "Net Total Sales", 6, 0, entryWidth)
+            paEntry = defaultEntry(salesInformationFrame,
+                                   "Paid amount", 7, 0, entryWidth)
+
+            duEntry = defaultEntry(salesInformationFrame,
+                                   "Due Total", 8, 0, entryWidth)
+
+            trv_sales_selected = ttk.Treeview(salesInformationFrame, columns=(1, 2, 3, 4, 5),
+                                              show="headings", height=int(0.00600*float(down)), padding=5, style="Custom.Treeview")
+            trv_sales_selected.grid(row=3, column=0, columnspan=2, pady=10)
+
+            trv_sales_selected.heading(1, text='Product')
+            trv_sales_selected.heading(2, text='Weight')
+            trv_sales_selected.heading(3, text='Price')
+            trv_sales_selected.heading(4, text='Quantity')
+            trv_sales_selected.heading(5, text='Total Cost')
+
+            trv_sales_selected.column(1, anchor=CENTER,
+                                      width=100)
+            trv_sales_selected.column(2, anchor=CENTER,
+                                      width=80)
+            trv_sales_selected.column(3, anchor=CENTER,
+                                      width=90)
+            trv_sales_selected.column(4, anchor=CENTER,
+                                      width=80)
+            trv_sales_selected.column(5, anchor=CENTER,
+                                      width=100)
+
+            for i in sales_product_information:
+                trv_sales_selected.insert("", "end", values=i)
+
+            scEntry.insert(0, salesCode)
+            cnEntry.insert(0, customer_name_selected)
+            cpEntry.insert(0, customer_phone_selected)
+            tsEntry.insert(0, total_sales_without_discounts)
+            dcEntry.insert(0, str(discount_selected) + "%")
+            ntEntry.insert(0, net_total_selected)
+            paEntry.insert(0, paid_total_selected)
+            duEntry.insert(0, due_total_selected)
+
+            scEntry.config(state="disabled")
+            cnEntry.config(state="disabled")
+            cpEntry.config(state="disabled")
+            tsEntry.config(state="disabled")
+            dcEntry.config(state="disabled")
+            ntEntry.config(state="disabled")
+            paEntry.config(state="disabled")
+            duEntry.config(state="disabled")
+
+            salesDetails_window.mainloop()
+
+        except Exception as identifier:
+            messagebox.showerror(
+                title="Selection Error", message="You didn't select any sales from the list.")
+
+    salesInformationButton = defaultButton(
+        SalesList_Frame_sales, "Details of selected Sales", 1, 0, W+E, command=getSalesInformationSelected)
+
 
 SalesSearch_Frame_sales = defaultFrame(
     saleFrame, "Search by Customer's Name, Phone number, Invoice Number or Date", 1, 0)
@@ -613,7 +721,7 @@ def salesSearch_sales():
 
     Label(SalesSearch_Frame_sales, text="Search Sales: ",
           font=f"Courier {fontSize} bold").grid(row=0, column=0, sticky=E)
-    searchSales_Entry_sales = ttk.Entry(SalesSearch_Frame_sales, width=entryWidth*5, justify=RIGHT,
+    searchSales_Entry_sales = ttk.Entry(SalesSearch_Frame_sales, width=entryWidth*3, justify=RIGHT,
                                         font=f"Courier {fontSize} bold")
     searchSales_Entry_sales.grid(
         row=0, column=1, pady=5, sticky=W+E, columnspan=2)
@@ -1239,7 +1347,7 @@ def UpdateHomeAddProduct_Frame():
                                                 invoice_items_quantity_list.append(
                                                     i[0])
 
-                                            cursor.execute("")
+                                            conn.commit()
 
                                             lT = []
                                             for i in range(len(invoice_items_ID_list)):
@@ -1859,7 +1967,7 @@ def searchStocks_stocks():
                 title="Selection error", message="You did not select a stock from the list.")
 
     editStockfromStockList = defaultButton(
-        stockList_frame_stocks, "Edit selected Customer", 1, 1, W+E, command=editstockfromstocklist)
+        stockList_frame_stocks, "Edit selected Stock", 1, 1, W+E, command=editstockfromstocklist)
 
 
 stockSearch_frame_stocks = defaultFrame(

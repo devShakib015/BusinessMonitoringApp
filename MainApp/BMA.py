@@ -5,6 +5,7 @@ import os
 import sqlite3
 import pytz
 from datetime import datetime
+import webbrowser
 
 from reportlab.pdfgen import canvas
 
@@ -67,7 +68,7 @@ def defaultEntry(parent, caption, row, column, width, **options):
 def defaultButton(parent, caption, row, column, sticky, **options):
     ttk.Style().configure(
         "TButton", font=f"Courier {fontSize} bold", **options)
-    button = ttk.Button(parent, text=caption,
+    button = ttk.Button(parent, text=caption, cursor="hand2",
                         **options)
     button.grid(row=row, column=column, pady=10, sticky=sticky)
 
@@ -128,6 +129,8 @@ productDetailsFrame = Frame(notebook, width=right,
                             height=down, pady=50, padx=100)
 productDetailsFrame.pack(fill="both", expand=1)
 
+aboutFrame = Frame(notebook, width=right, height=down, pady=30, padx=30)
+aboutFrame.pack(fill="both", expand=1)
 
 notebook.add(homeFrame, text="Billings")
 notebook.add(customerFrame, text="Customers")
@@ -137,6 +140,7 @@ notebook.add(productFrame, text="Add Products")
 notebook.add(stockFrame, text="Add Stocks")
 notebook.add(productDetailsFrame, text="Product Details")
 notebook.add(statsFrame, text="Statistics")
+notebook.add(aboutFrame, text="About")
 
 # notebook.place(relx=0, rely=0, relheight=1, relwidth=1)
 
@@ -1651,6 +1655,7 @@ def updateStockList_stocks():
                 trv_stocks.delete(*trv_stocks.get_children())
                 updateStockList_stocks()
                 UpdateHomeAddProduct_Frame()
+                updateProductsDetails()
             else:
                 return
 
@@ -1702,10 +1707,16 @@ def updateStockList_stocks():
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
 
+                price_per_product = float(
+                    price_edit_stocks.get()) / float(quantity_edit_stocks.get())
+
                 cursor.execute(
                     f"update stocks set Quantity={int(quantity_edit_stocks.get())} where ID={int(stock_ID)}")
                 cursor.execute(
                     f"update stocks set Price={float(price_edit_stocks.get())} where ID={int(stock_ID)}")
+
+                cursor.execute(
+                    f"update stocks set price_per_product={price_per_product} where ID={int(stock_ID)}")
 
                 resposne = messagebox.askyesno(
                     title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
@@ -1718,6 +1729,7 @@ def updateStockList_stocks():
                     trv_stocks.delete(*trv_stocks.get_children())
                     updateStockList_stocks()
                     UpdateHomeAddProduct_Frame()
+                    updateProductsDetails()
                     editWindow.destroy()
 
                 else:
@@ -1887,6 +1899,7 @@ def searchStocks_stocks():
                 trv_stocks.delete(*trv_stocks.get_children())
                 updateStockList_stocks()
                 UpdateHomeAddProduct_Frame()
+                updateProductsDetails()
             else:
                 return
 
@@ -1938,10 +1951,16 @@ def searchStocks_stocks():
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
 
+                price_per_product = float(
+                    price_edit_stocks.get()) / float(quantity_edit_stocks.get())
+
                 cursor.execute(
-                    f"update stocks set Quantity='{int(quantity_edit_stocks.get())}' where product_id={int(stock_ID)}")
+                    f"update stocks set Quantity={int(quantity_edit_stocks.get())} where ID={int(stock_ID)}")
                 cursor.execute(
-                    f"update stocks set Price='{float(price_edit_stocks.get())}' where product_id={int(stock_ID)}")
+                    f"update stocks set Price={float(price_edit_stocks.get())} where ID={int(stock_ID)}")
+
+                cursor.execute(
+                    f"update stocks set price_per_product={price_per_product} where ID={int(stock_ID)}")
 
                 resposne = messagebox.askyesno(
                     title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
@@ -1952,6 +1971,7 @@ def searchStocks_stocks():
                     messagebox.showinfo(
                         title="Edit stock successfully", message="Stock is updated successfully.")
                     updateStockList_stocks()
+                    updateProductsDetails()
                     editWindow.destroy()
 
                 else:
@@ -3286,6 +3306,38 @@ def stats():
 
 
 stats()
+
+
+def about():
+    about_frame = defaultFrame(aboutFrame, "About this software", 0, 0)
+
+    def callback(url):
+        webbrowser.open_new(url)
+
+    detailsLabel = Label(
+        about_frame, text="This software is completely build using python. \nAuthor: Hossain KM Shahriar (Shakib)")
+    detailsLabel.pack()
+
+    github = Label(about_frame, text="Github",
+                   fg="blue", cursor="hand2")
+    github.pack()
+    github.bind(
+        "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
+
+    website = Label(about_frame, text="Portfolio",
+                    fg="blue", cursor="hand2")
+    website.pack()
+    website.bind(
+        "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
+
+    facebook = Label(about_frame, text="Facebook",
+                     fg="blue", cursor="hand2")
+    facebook.pack()
+    facebook.bind(
+        "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
+
+
+about()
 
 conn.commit()
 

@@ -9,7 +9,7 @@ icon = os.path.join(BASE_DIR, "b.ico")
 db_path = os.path.join(BASE_DIR, "main.db")
 
 build_exe_options = {"packages": [
-    "os", "tkinter"], "include_files": [icon, db_path]}
+    "os", "tkinter", "pytz", "reportlab"], "include_files": [icon, db_path]}
 
 # GUI applications require a different base on Windows (the default is for a
 # console application).
@@ -21,4 +21,4 @@ setup(name="Business monitoring App",
       version="1.0",
       description="Manages your business.",
       options={"build_exe": build_exe_options},
-      executables=[Executable("main.py", icon=icon, base=base)])
+      executables=[Executable("BMA.py", icon=icon, base=base)])

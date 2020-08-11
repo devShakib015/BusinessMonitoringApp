@@ -1,10 +1,11 @@
+
 import sys
 import os
 from cx_Freeze import setup, Executable
 
 # Dependencies are automatically detected, but it might need fine tuning.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-icon = os.path.join(BASE_DIR, "bma.ico")
+icon = os.path.join(BASE_DIR, "b.ico")
 db_path = os.path.join(BASE_DIR, "main.db")
 
 build_exe_options = {"packages": [

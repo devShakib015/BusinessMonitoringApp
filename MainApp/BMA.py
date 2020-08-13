@@ -8,18 +8,22 @@ from datetime import datetime
 import webbrowser
 
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfbase.ttfonts import TTFont
+
 
 root = Tk()
 root.title("Business Management")
-right = 1280  # root.winfo_screenwidth()  # 1280  #
-down = 720  # root.winfo_screenheight()  # 720  #
+right = 1440  # root.winfo_screenwidth()  # 1280  #
+down = 800  # root.winfo_screenheight()  # 720  #
 # root.geometry(f"{right}x{down}")
 # root.geometry(f"{right}x{down}")
 
 
 #------------------------ Default width and height --------------------------------#
 
-entryWidth = int(0.01342*float(right))
+entryWidth = int(0.01542*float(right))
 fontSize = int(0.00829*float(right))
 
 
@@ -67,7 +71,7 @@ def defaultEntry(parent, caption, row, column, width, **options):
 
 def defaultButton(parent, caption, row, column, sticky, **options):
     ttk.Style().configure(
-        "TButton", font=f"Courier {fontSize} bold", **options)
+        "TButton", font=f"verdana {fontSize} bold", foreground="#e4324c")
     button = ttk.Button(parent, text=caption, cursor="hand2",
                         **options)
     button.grid(row=row, column=column, pady=10, sticky=sticky)
@@ -97,7 +101,7 @@ noteStyler.configure("TNotebook.Tab", background="#204051", width=15, foreground
     "times", int(0.00829*float(right))),  padding=[10, 10, 10, 10])
 
 noteStyler.map("TNotebook.Tab", background=[
-               ("selected", "#006a71")], foreground=[("selected", "white")])
+               ("selected", "#e4324c")], foreground=[("selected", "white")])
 
 
 notebook = ttk.Notebook(root, padding=0)
@@ -168,6 +172,202 @@ style.map("Custom.Treeview.Heading",
 
 style.configure("Custom.Treeview", font=(
     "Verdana", int(0.0067*float(right))), rowheight=int(0.015625*float(right)))
+
+"""
+
+Create Invoice Sales
+
+"""
+
+
+def create_invoice(invoice_number, invoice_date, customer_code, customer_name, customer_phone, customer_address, product_tuple_list, total_sales, discount_rate, discount_amount, net_sales, payment_amount, due_amount):
+
+    # convert the font so it is compatible
+    pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
+    pdfmetrics.registerFont(TTFont('Verdana', 'Verdana.ttf'))
+
+    # Page information
+    page_width = 595
+    page_height = 842
+    margin = 13
+
+    i_n = f"{invoice_number}"
+    i_d = f"{invoice_date}"
+    c_c = f"{customer_code}"
+    c_n = f"{customer_name}"
+    c_p = f"{customer_phone}"
+    c_a = f"{customer_address}"
+
+    l = product_tuple_list
+
+    outfiledir = filedialog.askdirectory()
+    outfilepath = os.path.join(outfiledir, i_n + '_' + c_n + '.pdf')
+    # Creating a pdf file and setting a naming convention
+    c = canvas.Canvas(outfilepath)
+    c.setPageSize((page_width, page_height))
+
+    # Invoice information
+    c.setFont('Verdana', 20)
+    text = 'BIOCIN COMPANY'
+    # text_width = stringWidth(text, 'Arial', 10)
+    c.drawString(4*margin, page_height - margin*3, text)
+
+    c.setFont('Verdana', 20)
+    text = 'INVOICE'
+    # text_width = stringWidth(text, 'Arial', 10)
+    c.drawString(4*margin + 310, page_height - margin*3, text)
+
+    y = page_height - margin*6
+    x = 4*margin
+    # x2 = x + 30
+
+    # Invoice number
+    c.setFont('Arial', 8)
+    c.drawString(x, y, 'Company Address: ')
+    c.drawString(x + 70, y, "Kushtia, Veramara")
+
+    c.drawString(x + 310, y, 'Invoice No.: ')
+    c.drawString(x + 355, y, i_n)
+    y -= margin
+
+    c.drawString(x, y, 'Company Phone: ')
+    c.drawString(x + 65, y, "0174565212")
+
+    c.drawString(x + 310, y, 'Invoice Date: ')
+    c.drawString(x + 360, y, i_d)
+    y -= margin
+
+    c.drawString(x, y, 'Company Email: ')
+    c.drawString(x + 65, y, "biocinbd@gmail.com")
+
+    c.drawString(x + 310, y, 'Customer Code: ')
+    c.drawString(x + 370, y, c_c)
+    y -= margin
+
+    c.drawString(x + 310, y, 'Customer Name: ')
+    c.drawString(x + 373, y, c_n)
+    y -= margin
+
+    c.drawString(x + 310, y, 'Customer Phone: ')
+    c.drawString(x + 377, y, c_p)
+    y -= margin
+
+    c.drawString(x + 310, y, 'Customer Address: ')
+    c.drawString(x + 383, y, c_a)
+    y -= margin
+    y -= margin
+
+    box_x_left = 40
+    box_x_right = 555
+    box_y_top = y
+    box_y_bottom = 200
+
+    c.line(box_x_left, box_y_top, box_x_right, box_y_top)
+    c.line(box_x_left, box_y_bottom, box_x_right, box_y_bottom)
+    c.line(box_x_left, box_y_top, box_x_left, box_y_bottom)
+    c.line(box_x_right, box_y_top, box_x_right, box_y_bottom)
+
+    c.line(box_x_left, box_y_top - 20, box_x_right, box_y_top - 20)
+    y -= margin
+
+    c.setFont('Verdana', 10)
+    p_text = "Product Name"
+    p_text_width = stringWidth(p_text, 'Arial', 10)
+    c.drawString(box_x_left + (140 - p_text_width)/2, y, p_text)
+
+    pr_text = "Price"
+    pr_text_width = stringWidth(pr_text, 'Arial', 10)
+    c.drawString(box_x_left + 70 + (260 - pr_text_width)/2, y, pr_text)
+
+    q_text = "Quantity"
+    q_text_width = stringWidth(q_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - q_text_width)/2, y, q_text)
+
+    t_text = "Total Cost"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width)/2, y, t_text)
+
+    c.line(box_x_left + 140, box_y_top, box_x_left + 140, box_y_bottom)
+    c.line(box_x_left + 260, box_y_top, box_x_left + 260, box_y_bottom)
+    c.line(box_x_left + 380, box_y_top, box_x_left + 380, box_y_bottom)
+
+    p_name_pos = box_x_left + 30
+    p_price_pos = box_x_left + 170
+    p_quantity_pos = box_x_left + 290
+    p_total_pos = box_x_left + 410
+
+    box_top_pos = box_y_top - 35
+
+    for i in l:
+        c.drawString(p_name_pos, box_top_pos, str(i[0]))
+        c.drawString(p_price_pos, box_top_pos, str(i[1]))
+        c.drawString(p_quantity_pos, box_top_pos, str(i[2]))
+        c.drawString(p_total_pos, box_top_pos, str(i[3]))
+        box_top_pos -= 15
+
+    box_bottom_pos = box_y_bottom-20
+
+    t_s_text = "Total Sales: "
+    t_s_text_width = stringWidth(t_s_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - t_s_text_width) /
+                 2, box_bottom_pos, t_s_text)
+
+    t_text = f"{total_sales}"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                 2, box_bottom_pos, t_text)
+
+    box_bottom_pos -= 20
+
+    d_text = f"Discount: ({discount_rate}%)"
+    d_text_width = stringWidth(d_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                 2, box_bottom_pos, d_text)
+
+    t_text = f"({discount_amount})"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                 2, box_bottom_pos, t_text)
+
+    box_bottom_pos -= 20
+
+    d_text = "Net Sales: "
+    d_text_width = stringWidth(d_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                 2, box_bottom_pos, d_text)
+
+    t_text = f"{net_sales}"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                 2, box_bottom_pos, t_text)
+
+    box_bottom_pos -= 20
+
+    d_text = "Paying amount: "
+    d_text_width = stringWidth(d_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                 2, box_bottom_pos, d_text)
+
+    t_text = f"({payment_amount})"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                 2, box_bottom_pos, t_text)
+
+    box_bottom_pos -= 20
+
+    d_text = "Due amount: "
+    d_text_width = stringWidth(d_text, 'Arial', 10)
+    c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                 2, box_bottom_pos, d_text)
+
+    t_text = f"{due_amount}"
+    t_text_width = stringWidth(t_text, 'Arial', 10)
+    c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                 2, box_bottom_pos, t_text)
+
+    c.drawString(box_x_left, box_bottom_pos, "Authorized Signature: ")
+
+    c.save()
 
 
 """
@@ -334,17 +534,17 @@ def updateDueList():
 
     trv_dues.heading(1, text='Customer Code')
     trv_dues.heading(2, text='Customer Name')
-    trv_dues.heading(4, text='Customer Phone')
+    trv_dues.heading(3, text='Customer Phone')
     trv_dues.heading(4, text='Total Due Amount')
 
     trv_dues.column(1, anchor=CENTER,
-                    width=int(0.1200*float(right)))
+                    width=int(0.1000*float(right)))
     trv_dues.column(2, anchor=CENTER,
-                    width=int(0.1500*float(right)))
+                    width=int(0.1400*float(right)))
     trv_dues.column(3, anchor=CENTER,
                     width=int(0.1500*float(right)))
     trv_dues.column(4, anchor=CENTER,
-                    width=int(0.1200*float(right)))
+                    width=int(0.1300*float(right)))
 
     conn = sqlite3.connect(db_path)
 
@@ -513,7 +713,7 @@ def SearchDues_frame():
 
         trv_dues.heading(1, text='Customer Code')
         trv_dues.heading(2, text='Customer Name')
-        trv_dues.heading(4, text='Customer Phone')
+        trv_dues.heading(3, text='Customer Phone')
         trv_dues.heading(4, text='Total Due Amount')
 
         trv_dues.column(1, anchor=CENTER,
@@ -1311,6 +1511,9 @@ def UpdateHomeAddProduct_Frame():
 
                                             paid_amount = float_payment_amount
 
+                                            discount_amount = float(
+                                                totalAmount_trv_home) - float(sale_amount)
+
                                             due_amount = due_amount_home
 
                                             conn = sqlite3.connect(db_path)
@@ -1384,18 +1587,27 @@ def UpdateHomeAddProduct_Frame():
                                                 title="Customer Error", message="Please insert customer Information.")
 
                                         def printInvoice():
-                                            """
-                                            pdf = canvas.Canvas("Invoice.pdf")
-                                            pdf.drawString(
-                                                100, 800, f"Sale Code: {sale_code}")
-                                            pdf.drawString(
-                                                100, 700, f"Total Amount: {totalAmount_trv_home}")
-                                            pdf.drawString(
-                                                100, 600, f"Discount percentage: {discount_percentage_applied}")
-                                            pdf.drawString(
-                                                100, 500, f"Net Amount: {sale_amount}")
-                                            pdf.save()
-                                            """
+
+                                            conn = sqlite3.connect(db_path)
+                                            cursor = conn.cursor()
+
+                                            cursor.execute(
+                                                f"select created_at from sales where sale_code={int(sale_code)}")
+                                            sale_date_tuple = cursor.fetchone()
+                                            sale_date = sale_date_tuple[0]
+
+                                            conn.commit()
+                                            cursor.execute(
+                                                f"select * from customers where ID={int(customer_id)}")
+                                            customer_info_tuple_list = cursor.fetchall()
+
+                                            conn.commit()
+                                            cursor.execute(
+                                                f"select products.product,products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={int(sale_code)}")
+                                            sales_product_information = cursor.fetchall()
+
+                                            create_invoice(
+                                                sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), float(discount_percentage_applied), discount_amount, float(sale_amount), float(paid_amount), float(due_amount))
 
                                             customerCodeEntry_home.config(
                                                 state="enabled")
@@ -1815,6 +2027,9 @@ def updateStockAdd():
             except Exception as identifier:
                 messagebox.showerror(
                     title="Adding stock error", message="Please insert valid information for the stock.")
+                productNameEntry_stocks.delete(0, END)
+                productPriceEntry_stocks.delete(0, END)
+                productQuantityEntry_stocks.delete(0, END)
 
         stockAdd_button = defaultButton(
             stockAdd_frame_stocks, "Add stock", 4, 1, W+E, command=addStock)
@@ -2711,6 +2926,7 @@ def updateProductsList():
                 updateProductsList()
                 UpdateHomeAddProduct_Frame()
                 updateStockAdd()
+                updateProductsDetails()
             else:
                 return
 
@@ -2943,7 +3159,7 @@ def addProduct_products():
 
             cursor.execute("INSERT INTO products(product, weight, price) VALUES (?,?,?)",
                            (product_Name,
-                            product_weight, product_Price))
+                            int(product_weight), float(product_Price)))
 
             resposne = messagebox.askyesno(
                 title="Confirm Save Product", message="Are you sure you want to save this product?")
@@ -2971,6 +3187,9 @@ def addProduct_products():
     except Exception as identifier:
         messagebox.showerror(title="Products Error",
                              message="There is an error to add the product.")
+        product_name_Entry_products.delete(0, END)
+        product_weight_entry_products.delete(0, END)
+        product_price_Entry_products.delete(0, END)
 
 
 add_product_button_products = defaultButton(

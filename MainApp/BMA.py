@@ -1506,13 +1506,13 @@ def UpdateHomeAddProduct_Frame():
 
                                             sale_amount = net_total_home
 
-                                            discount_percentage_applied = ((
+                                            discount_percentage_applied = int((
                                                 float(totalAmount_trv_home) - float(sale_amount))/float((totalAmount_trv_home)) * 100)
 
                                             paid_amount = float_payment_amount
 
-                                            discount_amount = float(
-                                                totalAmount_trv_home) - float(sale_amount)
+                                            discount_amount = "{:.2f}".format(float(
+                                                totalAmount_trv_home) - float(sale_amount))
 
                                             due_amount = due_amount_home
 
@@ -1579,100 +1579,106 @@ def UpdateHomeAddProduct_Frame():
                                                 saveButton_home = defaultButton(
                                                     productsListFrame_home, "Save Invoice", 9, 0, W+E, state="disabled")
 
+                                                def printInvoice():
+                                                    conn = sqlite3.connect(
+                                                        db_path)
+                                                    cursor = conn.cursor()
+
+                                                    cursor.execute(
+                                                        f"select created_at from sales where sale_code={int(sale_code)}")
+                                                    sale_date_tuple = cursor.fetchone()
+                                                    sale_date = sale_date_tuple[0]
+
+                                                    conn.commit()
+                                                    cursor.execute(
+                                                        f"select * from customers where ID={int(customer_id)}")
+                                                    customer_info_tuple_list = cursor.fetchall()
+
+                                                    conn.commit()
+                                                    cursor.execute(
+                                                        f"select products.product,products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={int(sale_code)}")
+                                                    sales_product_information = cursor.fetchall()
+
+                                                    create_invoice(
+                                                        sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), discount_percentage_applied, discount_amount, float(sale_amount), float(paid_amount), float(due_amount))
+
+                                                    customerCodeEntry_home.config(
+                                                        state="enabled")
+                                                    customerNameEntry_home.config(
+                                                        state="enabled")
+                                                    customerPhoneEntry_home.config(
+                                                        state="enabled")
+                                                    customerAddressEntry_home.config(
+                                                        state="enabled")
+
+                                                    CustomerSearchCode_home.delete(
+                                                        0, END)
+                                                    customerCodeEntry_home.delete(
+                                                        0, END)
+                                                    customerNameEntry_home.delete(
+                                                        0, END)
+                                                    customerPhoneEntry_home.delete(
+                                                        0, END)
+                                                    customerAddressEntry_home.delete(
+                                                        0, END)
+
+                                                    customerCodeEntry_home.config(
+                                                        state="disabled")
+                                                    customerNameEntry_home.config(
+                                                        state="disabled")
+                                                    customerPhoneEntry_home.config(
+                                                        state="disabled")
+                                                    customerAddressEntry_home.config(
+                                                        state="disabled")
+
+                                                    deleteAll()
+
+                                                    netAmountEntry_home.config(
+                                                        state="enabled")
+                                                    netAmountEntry_home.delete(
+                                                        0, END)
+                                                    netAmountEntry_home.config(
+                                                        state="disabled")
+
+                                                    paymentEntry_home.delete(
+                                                        0, END)
+
+                                                    discountEntry_home.delete(
+                                                        0, END)
+
+                                                    dueEntry_home.config(
+                                                        state="enabled")
+                                                    dueEntry_home.delete(
+                                                        0, END)
+                                                    dueEntry_home.config(
+                                                        state="disabled")
+
+                                                    deleteButton_home = defaultButton(
+                                                        productsListFrame_home, "Delete Product", 1, 0, W+E, state="disabled")
+
+                                                    deleteAllButton_home = defaultButton(
+                                                        productsListFrame_home, "Delete All Products", 1, 1, W+E, state="disabled")
+
+                                                    discountButton_home = defaultButton(
+                                                        productsListFrame_home, "Get Net Amount", 4, 1, W+E, state="disabled")
+
+                                                    addPaymentButton_home = defaultButton(
+                                                        productsListFrame_home, "Add Payment", 7, 1, W+E, state="disabled")
+
+                                                    printButton_home = defaultButton(
+                                                        productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, state="disabled")
+
+                                                printButton_home = defaultButton(
+                                                    productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, command=printInvoice)
+
                                             else:
                                                 return
 
                                         except Exception as identifier:
                                             messagebox.showerror(
                                                 title="Customer Error", message="Please insert customer Information.")
-
-                                        def printInvoice():
-
-                                            conn = sqlite3.connect(db_path)
-                                            cursor = conn.cursor()
-
-                                            cursor.execute(
-                                                f"select created_at from sales where sale_code={int(sale_code)}")
-                                            sale_date_tuple = cursor.fetchone()
-                                            sale_date = sale_date_tuple[0]
-
-                                            conn.commit()
-                                            cursor.execute(
-                                                f"select * from customers where ID={int(customer_id)}")
-                                            customer_info_tuple_list = cursor.fetchall()
-
-                                            conn.commit()
-                                            cursor.execute(
-                                                f"select products.product,products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={int(sale_code)}")
-                                            sales_product_information = cursor.fetchall()
-
-                                            create_invoice(
-                                                sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), float(discount_percentage_applied), discount_amount, float(sale_amount), float(paid_amount), float(due_amount))
-
-                                            customerCodeEntry_home.config(
-                                                state="enabled")
-                                            customerNameEntry_home.config(
-                                                state="enabled")
-                                            customerPhoneEntry_home.config(
-                                                state="enabled")
-                                            customerAddressEntry_home.config(
-                                                state="enabled")
-
-                                            CustomerSearchCode_home.delete(
-                                                0, END)
-                                            customerCodeEntry_home.delete(
-                                                0, END)
-                                            customerNameEntry_home.delete(
-                                                0, END)
-                                            customerPhoneEntry_home.delete(
-                                                0, END)
-                                            customerAddressEntry_home.delete(
-                                                0, END)
-
-                                            customerCodeEntry_home.config(
-                                                state="disabled")
-                                            customerNameEntry_home.config(
-                                                state="disabled")
-                                            customerPhoneEntry_home.config(
-                                                state="disabled")
-                                            customerAddressEntry_home.config(
-                                                state="disabled")
-
-                                            deleteAll()
-
-                                            netAmountEntry_home.config(
-                                                state="enabled")
-                                            netAmountEntry_home.delete(0, END)
-                                            netAmountEntry_home.config(
-                                                state="disabled")
-
-                                            paymentEntry_home.delete(0, END)
-
-                                            discountEntry_home.delete(0, END)
-
-                                            dueEntry_home.config(
-                                                state="enabled")
-                                            dueEntry_home.delete(0, END)
-                                            dueEntry_home.config(
-                                                state="disabled")
-
-                                            deleteButton_home = defaultButton(
-                                                productsListFrame_home, "Delete Product", 1, 0, W+E, state="disabled")
-
-                                            deleteAllButton_home = defaultButton(
-                                                productsListFrame_home, "Delete All Products", 1, 1, W+E, state="disabled")
-
-                                            discountButton_home = defaultButton(
-                                                productsListFrame_home, "Get Net Amount", 4, 1, W+E, state="disabled")
-
-                                            addPaymentButton_home = defaultButton(
-                                                productsListFrame_home, "Add Payment", 7, 1, W+E, state="disabled")
-
                                             printButton_home = defaultButton(
                                                 productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, state="disabled")
-
-                                        printButton_home = defaultButton(
-                                            productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, command=printInvoice)
 
                                     saveButton_home = defaultButton(
                                         productsListFrame_home, "Save Invoice", 9, 0, W+E, command=saveInvoice)

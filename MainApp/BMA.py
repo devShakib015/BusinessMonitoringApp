@@ -339,7 +339,8 @@ def create_invoice(invoice_number, invoice_date, customer_code, customer_name, c
 
     c.setFillColor(colors.black)
     for i in l:
-        c.drawString(p_name_pos, box_top_pos, str(i[0]))
+        c.drawString(p_name_pos, box_top_pos, str(
+            l.index(i) + 1) + ". " + str(i[0]))
         c.drawString(p_weight_pos, box_top_pos, str(i[1]))
         c.drawString(p_price_pos, box_top_pos, str(i[2]))
         c.drawString(p_quantity_pos, box_top_pos, str(i[3]))
@@ -415,6 +416,12 @@ def create_invoice(invoice_number, invoice_date, customer_code, customer_name, c
 
     c.setFillColor(colors.black)
     text = "Authorized Signature"
+    tw = stringWidth(text, "Verdana", 10)
+    c.drawString(box_x_left, box_bottom_pos + 48, text)
+    c.line(box_x_left - 5, box_bottom_pos+12+48,
+           box_x_left + tw + 5, box_bottom_pos+12+48)
+
+    text = "Customer Signature"
     tw = stringWidth(text, "Verdana", 10)
     c.drawString(box_x_left, box_bottom_pos, text)
     c.line(box_x_left - 5, box_bottom_pos+12,

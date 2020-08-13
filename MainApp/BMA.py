@@ -205,104 +205,145 @@ def create_invoice(invoice_number, invoice_date, customer_code, customer_name, c
     # Creating a pdf file and setting a naming convention
     c = canvas.Canvas(outfilepath)
     c.setPageSize((page_width, page_height))
+    from reportlab.lib.colors import HexColor
+    from reportlab.lib import colors
+    from reportlab.lib.colors import Color
+    red50transparent = Color(100, 0, 0, alpha=0.5)
+    blue30transparent = Color(0, 0, 100, alpha=0.3)
+    goodColor = HexColor("#2b92c5")
+
+    # sets fill color like orange
 
     # Invoice information
     c.setFont('Verdana', 20)
-    text = 'BIOCIN COMPANY'
+    text = 'Biocin Bangladesh'
     # text_width = stringWidth(text, 'Arial', 10)
     c.drawString(4*margin, page_height - margin*3, text)
 
     c.setFont('Verdana', 20)
     text = 'INVOICE'
     # text_width = stringWidth(text, 'Arial', 10)
-    c.drawString(4*margin + 310, page_height - margin*3, text)
+    c.drawString(4*margin + 280, page_height - margin*3, text)
 
     y = page_height - margin*6
     x = 4*margin
     # x2 = x + 30
 
     # Invoice number
-    c.setFont('Arial', 8)
-    c.drawString(x, y, 'Company Address: ')
-    c.drawString(x + 70, y, "Kushtia, Veramara")
+    c.setFont('Verdana', 10)
+    text = 'Address: '
+    c.drawString(x, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + tw, y, "RP Gate, Rajendrapur, Gazipur, Dhaka")
 
-    c.drawString(x + 310, y, 'Invoice No.: ')
-    c.drawString(x + 355, y, i_n)
+    text = 'Invoice No: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, i_n)
     y -= margin
 
-    c.drawString(x, y, 'Company Phone: ')
-    c.drawString(x + 65, y, "0174565212")
+    text = 'Phone: '
+    c.drawString(x, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + tw, y, "01716-573618")
 
-    c.drawString(x + 310, y, 'Invoice Date: ')
-    c.drawString(x + 360, y, i_d)
+    text = 'Invoice Date: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, i_d)
     y -= margin
 
-    c.drawString(x, y, 'Company Email: ')
-    c.drawString(x + 65, y, "biocinbd@gmail.com")
+    text = 'Email: '
+    c.drawString(x, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + tw, y, "biocinbangladesh@gmail.com")
 
-    c.drawString(x + 310, y, 'Customer Code: ')
-    c.drawString(x + 370, y, c_c)
+    text = 'Customer Code: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, c_c)
     y -= margin
 
-    c.drawString(x + 310, y, 'Customer Name: ')
-    c.drawString(x + 373, y, c_n)
+    text = 'Customer Name: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, c_n)
     y -= margin
 
-    c.drawString(x + 310, y, 'Customer Phone: ')
-    c.drawString(x + 377, y, c_p)
+    text = 'Customer Phone: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, c_p)
     y -= margin
 
-    c.drawString(x + 310, y, 'Customer Address: ')
-    c.drawString(x + 383, y, c_a)
+    text = 'Customer Address: '
+    c.drawString(x + 280, y, text)
+    tw = stringWidth(text, 'Verdana', 10)
+    c.drawString(x + 280 + tw, y, c_a)
     y -= margin
     y -= margin
 
-    box_x_left = 40
-    box_x_right = 555
+    box_x_left = 45
+    box_x_right = 550
     box_y_top = y
-    box_y_bottom = 200
+    box_y_bottom = 150
+
+    c.setFillColor(HexColor("#EAEAEC"))
+    c.rect(box_x_left, box_y_bottom, 505, y - 170, fill=True, stroke=True)
 
     c.line(box_x_left, box_y_top, box_x_right, box_y_top)
     c.line(box_x_left, box_y_bottom, box_x_right, box_y_bottom)
     c.line(box_x_left, box_y_top, box_x_left, box_y_bottom)
     c.line(box_x_right, box_y_top, box_x_right, box_y_bottom)
 
+    c.setFillColor(goodColor)
+    c.rect(box_x_left, box_y_top - 20, 505, 20, fill=True, stroke=True)
+
     c.line(box_x_left, box_y_top - 20, box_x_right, box_y_top - 20)
     y -= margin
 
+    c.setFillColor(colors.white)
     c.setFont('Verdana', 10)
     p_text = "Product Name"
     p_text_width = stringWidth(p_text, 'Arial', 10)
-    c.drawString(box_x_left + (140 - p_text_width)/2, y, p_text)
+    c.drawString(box_x_left + (200 - p_text_width)/2, y, p_text)
+
+    p_text = "Weight (g)"
+    p_text_width = stringWidth(p_text, 'Arial', 10)
+    c.drawString(box_x_left + 100 + (280 - p_text_width)/2, y, p_text)
 
     pr_text = "Price"
     pr_text_width = stringWidth(pr_text, 'Arial', 10)
-    c.drawString(box_x_left + 70 + (260 - pr_text_width)/2, y, pr_text)
+    c.drawString(box_x_left + 140 + (340 - pr_text_width)/2, y, pr_text)
 
     q_text = "Quantity"
     q_text_width = stringWidth(q_text, 'Arial', 10)
-    c.drawString(box_x_left + 130 + (380 - q_text_width)/2, y, q_text)
+    c.drawString(box_x_left + 167 + (400 - q_text_width)/2, y, q_text)
 
     t_text = "Total Cost"
     t_text_width = stringWidth(t_text, 'Arial', 10)
-    c.drawString(box_x_left + 170 + (555 - t_text_width)/2, y, t_text)
+    c.drawString(box_x_left + 180 + (550 - t_text_width)/2, y, t_text)
 
-    c.line(box_x_left + 140, box_y_top, box_x_left + 140, box_y_bottom)
-    c.line(box_x_left + 260, box_y_top, box_x_left + 260, box_y_bottom)
-    c.line(box_x_left + 380, box_y_top, box_x_left + 380, box_y_bottom)
+    c.line(box_x_left + 200, box_y_top, box_x_left + 200, box_y_bottom)
+    c.line(box_x_left + 280, box_y_top, box_x_left + 280, box_y_bottom)
+    c.line(box_x_left + 340, box_y_top, box_x_left + 340, box_y_bottom)
+    c.line(box_x_left + 400, box_y_top, box_x_left + 400, box_y_bottom)
 
     p_name_pos = box_x_left + 30
-    p_price_pos = box_x_left + 170
-    p_quantity_pos = box_x_left + 290
-    p_total_pos = box_x_left + 410
+    p_weight_pos = box_x_left + 230
+    p_price_pos = box_x_left + 295
+    p_quantity_pos = box_x_left + 360
+    p_total_pos = box_x_left + 420
 
     box_top_pos = box_y_top - 35
 
+    c.setFillColor(colors.black)
     for i in l:
         c.drawString(p_name_pos, box_top_pos, str(i[0]))
-        c.drawString(p_price_pos, box_top_pos, str(i[1]))
-        c.drawString(p_quantity_pos, box_top_pos, str(i[2]))
-        c.drawString(p_total_pos, box_top_pos, str(i[3]))
+        c.drawString(p_weight_pos, box_top_pos, str(i[1]))
+        c.drawString(p_price_pos, box_top_pos, str(i[2]))
+        c.drawString(p_quantity_pos, box_top_pos, str(i[3]))
+        c.drawString(p_total_pos, box_top_pos, str(i[4]))
         box_top_pos -= 15
 
     box_bottom_pos = box_y_bottom-20
@@ -328,8 +369,11 @@ def create_invoice(invoice_number, invoice_date, customer_code, customer_name, c
     t_text_width = stringWidth(t_text, 'Arial', 10)
     c.drawString(box_x_left + 170 + (555 - t_text_width) /
                  2, box_bottom_pos, t_text)
+    box_bottom_pos -= 8
 
-    box_bottom_pos -= 20
+    c.line(box_x_left + 200, box_bottom_pos, 555, box_bottom_pos)
+
+    box_bottom_pos -= 12
 
     d_text = "Net Sales: "
     d_text_width = stringWidth(d_text, 'Arial', 10)
@@ -353,21 +397,88 @@ def create_invoice(invoice_number, invoice_date, customer_code, customer_name, c
     c.drawString(box_x_left + 170 + (555 - t_text_width) /
                  2, box_bottom_pos, t_text)
 
-    box_bottom_pos -= 20
+    box_bottom_pos -= 8
+
+    c.line(box_x_left + 200, box_bottom_pos, 555, box_bottom_pos)
+
+    box_bottom_pos -= 12
 
     d_text = "Due amount: "
     d_text_width = stringWidth(d_text, 'Arial', 10)
     c.drawString(box_x_left + 130 + (380 - d_text_width) /
                  2, box_bottom_pos, d_text)
-
+    c.setFillColor(colors.red)
     t_text = f"{due_amount}"
     t_text_width = stringWidth(t_text, 'Arial', 10)
     c.drawString(box_x_left + 170 + (555 - t_text_width) /
                  2, box_bottom_pos, t_text)
 
-    c.drawString(box_x_left, box_bottom_pos, "Authorized Signature: ")
+    c.setFillColor(colors.black)
+    text = "Authorized Signature"
+    tw = stringWidth(text, "Verdana", 10)
+    c.drawString(box_x_left, box_bottom_pos, text)
+    c.line(box_x_left - 5, box_bottom_pos+12,
+           box_x_left + tw + 5, box_bottom_pos+12)
 
     c.save()
+
+
+"""
+
+
+Stats Start
+
+
+"""
+
+
+def stats():
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("select sum(sale_amount), sum(paid_amount) from sales")
+    sales_stats_info = cursor.fetchall()
+    net_sales_sats = 0
+    net_paid_sats = 0
+
+    if sales_stats_info[0][0] != None or sales_stats_info[0][1] != None:
+        net_sales_sats = sales_stats_info[0][0]
+        net_paid_sats = sales_stats_info[0][1]
+
+    cursor.execute("select sum(amount) from duesPaid")
+    dusePaid_stats_info = cursor.fetchall()
+    net_duesPaid_stats = 0
+    if dusePaid_stats_info[0][0] != None:
+        net_duesPaid_stats = dusePaid_stats_info[0][0]
+
+    total_payment_get_stats = net_paid_sats + net_duesPaid_stats
+
+    total_due_stats = net_sales_sats - total_payment_get_stats
+
+    stats_label = Label(statsFrame, text="STATISTICS",
+                        font="verdana 40 bold underline", foreground="green").grid(row=0, column=0, pady=50, columnspan=2)
+
+    total_sales_stats_entry = defaultEntry(
+        statsFrame, "Total Sales", 1, 0, entryWidth)
+    total_payment_get_stats_entry = defaultEntry(
+        statsFrame, "Total Payment Get", 2, 0, entryWidth)
+    total_due_stats_entry = defaultEntry(
+        statsFrame, "Total Dues", 3, 0, entryWidth)
+
+    total_sales_stats_entry.insert(0, net_sales_sats)
+    total_payment_get_stats_entry.insert(0, total_payment_get_stats)
+    total_due_stats_entry.insert(0, total_due_stats)
+
+    total_sales_stats_entry.config(state="disabled")
+    total_payment_get_stats_entry.config(state="disabled")
+    total_due_stats_entry.config(state="disabled")
+
+    conn.commit()
+    conn.close()
+
+
+stats()
 
 
 """
@@ -438,20 +549,26 @@ def updateProductsDetails():
     cursor.execute("SELECT ID from products")
     products_IDS_List_tuple = cursor.fetchall()
 
-    products_ids_list = []
-    for p in products_IDS_List_tuple:
-        products_ids_list.append(p[0])
+    conn.commit()
+    conn.close()
 
-    product_details_list = []
-    for id in products_ids_list:
-        product_details_list.append(getProductDetails(id))
+    if products_IDS_List_tuple != None:
+        products_ids_list = []
+        for p in products_IDS_List_tuple:
+            products_ids_list.append(p[0])
+
+        product_details_list = []
+        for id in products_ids_list:
+            product_details_list.append(getProductDetails(id))
+    else:
+        product_details_list = []
 
     trv_product_details = ttk.Treeview(productDetailsFrame, columns=(
         1, 2, 3, 4, 5, 6, 7), show="headings", height=int(0.02500*float(down)), padding=5, style="Custom.Treeview")
     trv_product_details.grid(row=0, column=0)
 
     trv_product_details.heading(1, text='Name')
-    trv_product_details.heading(2, text='Weight (g)')
+    trv_product_details.heading(2, text='Weight')
     trv_product_details.heading(3, text='Selling Price')
     trv_product_details.heading(4, text='Cost Price')
     trv_product_details.heading(5, text='Total Stock Added')
@@ -685,6 +802,7 @@ def payDue_dues():
 
                 payDue_dues()
                 updateDueList()
+                stats()
 
             else:
                 return
@@ -1574,6 +1692,7 @@ def UpdateHomeAddProduct_Frame():
                                                 UpdateSalesList_sales()
                                                 updateDueList()
                                                 updateProductsDetails()
+                                                stats()
                                                 messagebox.showinfo(
                                                     title="Save Success", message=f"The information is succesfully saved in database. The invoice number is {sale_code}.")
                                                 saveButton_home = defaultButton(
@@ -1596,7 +1715,7 @@ def UpdateHomeAddProduct_Frame():
 
                                                     conn.commit()
                                                     cursor.execute(
-                                                        f"select products.product,products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={int(sale_code)}")
+                                                        f"select products.product, products.weight, products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={int(sale_code)}")
                                                     sales_product_information = cursor.fetchall()
 
                                                     create_invoice(
@@ -1846,7 +1965,7 @@ def updateStockList_stocks():
     cursor = conn.cursor()
 
     cursor.execute(
-        "select stocks.ID, products.product, stocks.Quantity, stocks.Price, stocks.price_per_product, stocks.created_at from stocks inner join products where stocks.product_id=products.ID order by stocks.created_at desc")
+        "select stocks.ID, products.product, stocks.Quantity, stocks.Price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products where stocks.product_id=products.ID order by stocks.created_at desc")
     stocks_tuple_list = cursor.fetchall()
 
     for i in stocks_tuple_list:
@@ -1874,6 +1993,7 @@ def updateStockList_stocks():
                 updateStockList_stocks()
                 UpdateHomeAddProduct_Frame()
                 updateProductsDetails()
+                stats()
             else:
                 return
 
@@ -1948,6 +2068,7 @@ def updateStockList_stocks():
                     updateStockList_stocks()
                     UpdateHomeAddProduct_Frame()
                     updateProductsDetails()
+                    stats()
                     editWindow.destroy()
 
                 else:
@@ -2023,6 +2144,7 @@ def updateStockAdd():
                     conn.close()
                     updateStockList_stocks()
                     updateProductsDetails()
+                    stats()
                     productNameEntry_stocks.delete(0, END)
                     productPriceEntry_stocks.delete(0, END)
                     productQuantityEntry_stocks.delete(0, END)
@@ -2093,7 +2215,7 @@ def searchStocks_stocks():
     query = searchStocksEntry_stocks.get()
 
     cursor.execute(
-        f"select stocks.ID, products.product, stocks.Quantity, stocks.price, stocks.price_per_product, stocks.created_at from stocks inner join products on stocks.product_id=products.ID where products.product like '%{query}%' or stocks.created_at like '%{query}%' order by stocks.created_at desc")
+        f"select stocks.ID, products.product, stocks.Quantity, stocks.price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products on stocks.product_id=products.ID where products.product like '%{query}%' or stocks.created_at like '%{query}%' order by stocks.created_at desc")
     stocks_tuple_list = cursor.fetchall()
 
     for i in stocks_tuple_list:
@@ -2121,6 +2243,7 @@ def searchStocks_stocks():
                 updateStockList_stocks()
                 UpdateHomeAddProduct_Frame()
                 updateProductsDetails()
+                stats()
             else:
                 return
 
@@ -2193,6 +2316,7 @@ def searchStocks_stocks():
                         title="Edit stock successfully", message="Stock is updated successfully.")
                     updateStockList_stocks()
                     updateProductsDetails()
+                    stats()
                     editWindow.destroy()
 
                 else:
@@ -3473,64 +3597,6 @@ Product End
 
 
 """
-
-
-"""
-
-
-Stats Start
-
-
-"""
-
-
-def stats():
-
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    cursor.execute("select sum(sale_amount), sum(paid_amount) from sales")
-    sales_stats_info = cursor.fetchall()
-    net_sales_sats = 0
-    net_paid_sats = 0
-
-    if sales_stats_info[0][0] != None or sales_stats_info[0][1] != None:
-        net_sales_sats = sales_stats_info[0][0]
-        net_paid_sats = sales_stats_info[0][1]
-
-    cursor.execute("select sum(amount) from duesPaid")
-    dusePaid_stats_info = cursor.fetchall()
-    net_duesPaid_stats = 0
-    if dusePaid_stats_info[0][0] != None:
-        net_duesPaid_stats = dusePaid_stats_info[0][0]
-
-    total_payment_get_stats = net_paid_sats + net_duesPaid_stats
-
-    total_due_stats = net_sales_sats - total_payment_get_stats
-
-    stats_label = Label(statsFrame, text="STATISTICS",
-                        font="verdana 40 bold underline", foreground="green").grid(row=0, column=0, pady=50, columnspan=2)
-
-    total_sales_stats_entry = defaultEntry(
-        statsFrame, "Total Sales", 1, 0, entryWidth)
-    total_payment_get_stats_entry = defaultEntry(
-        statsFrame, "Total Payment Get", 2, 0, entryWidth)
-    total_due_stats_entry = defaultEntry(
-        statsFrame, "Total Dues", 3, 0, entryWidth)
-
-    total_sales_stats_entry.insert(0, net_sales_sats)
-    total_payment_get_stats_entry.insert(0, total_payment_get_stats)
-    total_due_stats_entry.insert(0, total_due_stats)
-
-    total_sales_stats_entry.config(state="disabled")
-    total_payment_get_stats_entry.config(state="disabled")
-    total_due_stats_entry.config(state="disabled")
-
-    conn.commit()
-    conn.close()
-
-
-stats()
 
 
 def about():

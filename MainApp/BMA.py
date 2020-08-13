@@ -15,8 +15,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 root = Tk()
 root.title("Business Management")
-right = 1440  # root.winfo_screenwidth()  # 1280  #
-down = 800  # root.winfo_screenheight()  # 720  #
+right = root.winfo_screenwidth()  # 1280  #
+down = root.winfo_screenheight()  # 720  #
 # root.geometry(f"{right}x{down}")
 # root.geometry(f"{right}x{down}")
 
@@ -58,11 +58,35 @@ def defaultFrame(parent, caption, row, column, **options):
 
 
 def defaultEntry(parent, caption, row, column, width, **options):
+    def make_menu(w):
+        global the_menu
+        the_menu = Menu(w, tearoff=0)
+        the_menu.add_command(label="Cut")
+        the_menu.add_command(label="Copy")
+        the_menu.add_command(label="Paste")
+
+    def show_menu(e):
+        try:
+            w = e.widget
+            the_menu.entryconfigure("Cut",
+                                    command=lambda: w.event_generate("<<Cut>>"))
+            the_menu.entryconfigure("Copy",
+                                    command=lambda: w.event_generate("<<Copy>>"))
+            the_menu.entryconfigure("Paste",
+                                    command=lambda: w.event_generate("<<Paste>>"))
+            the_menu.tk.call("tk_popup", the_menu, e.x_root, e.y_root)
+        except Exception as identifier:
+            make_menu(parent)
+
+    make_menu(parent)
+
     Label(parent, text=caption + ": ",
           font=f"Courier {fontSize} bold").grid(row=row, column=column, sticky=E)
     entry = ttk.Entry(parent, width=width, justify=RIGHT,
                       font=f"Courier {fontSize} bold", **options)
     entry.grid(row=row, column=column + 1, pady=5, sticky=W+E)
+    entry.bind_class("TEntry", "<Button-3><ButtonRelease-3>", show_menu)
+
     return entry
 
 
@@ -104,12 +128,15 @@ noteStyler.map("TNotebook.Tab", background=[
                ("selected", "#e4324c")], foreground=[("selected", "white")])
 
 
-notebook = ttk.Notebook(root, padding=0)
+#
+notebook = ttk.Notebook(root, padding=0, width=right, height=down)
 notebook.pack(fill="both", expand=1)
+
 
 homeFrame = Frame(notebook, width=right, height=down,
                   pady=5, padx=10)
 homeFrame.pack(fill="both", expand=1)
+
 
 customerFrame = Frame(notebook, width=right, height=down, pady=10)
 customerFrame.pack(fill="both", expand=1)
@@ -126,11 +153,11 @@ saleFrame.pack(fill="both", expand=1)
 dueFrame = Frame(notebook, width=right, height=down, pady=10)
 dueFrame.pack(fill="both", expand=1)
 
-statsFrame = Frame(notebook, width=right, height=down, pady=100, padx=100)
+statsFrame = Frame(notebook, width=right, height=down, pady=50, padx=50)
 statsFrame.pack(fill="both", expand=1)
 
 productDetailsFrame = Frame(notebook, width=right,
-                            height=down, pady=50, padx=100)
+                            height=down, pady=50, padx=(right * 0.105))
 productDetailsFrame.pack(fill="both", expand=1)
 
 aboutFrame = Frame(notebook, width=right, height=down, pady=30, padx=30)
@@ -172,6 +199,7 @@ style.map("Custom.Treeview.Heading",
 
 style.configure("Custom.Treeview", font=(
     "Verdana", int(0.0067*float(right))), rowheight=int(0.015625*float(right)))
+
 
 """
 
@@ -572,7 +600,7 @@ def updateProductsDetails():
 
     trv_product_details = ttk.Treeview(productDetailsFrame, columns=(
         1, 2, 3, 4, 5, 6, 7), show="headings", height=int(0.02500*float(down)), padding=5, style="Custom.Treeview")
-    trv_product_details.grid(row=0, column=0)
+    trv_product_details.grid(row=0, column=0, columnspan=2)
 
     trv_product_details.heading(1, text='Name')
     trv_product_details.heading(2, text='Weight')
@@ -599,6 +627,11 @@ def updateProductsDetails():
 
     for i in product_details_list:
         trv_product_details.insert("", "end", values=i)
+
+    trv_total_entry = defaultEntry(
+        productDetailsFrame, "Total items in the list", 1, 0, entryWidth)
+    trv_total_entry.insert(0, f"{len(product_details_list)}")
+    trv_total_entry.config(state="disabled")
 
     def printDetails():
         file = filedialog.asksaveasfilename(title='Name a file', initialdir='\\', filetypes=(("PDF file", "*.pdf*"),),
@@ -633,7 +666,7 @@ def updateProductsDetails():
                             message="The pdf is saved successfully.")
 
     printDetailsButton = defaultButton(
-        productDetailsFrame, "Print Product Details", 1, 0, W+E, command=printDetails)
+        productDetailsFrame, "Print Product Details", 2, 1, W+E, command=printDetails)
 
 
 updateProductsDetails()
@@ -654,7 +687,7 @@ DueList_frame = defaultFrame(dueFrame, "Paying Dues List", 0, 1, rowspan=2)
 def updateDueList():
     trv_dues = ttk.Treeview(DueList_frame, columns=(
         1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
-    trv_dues.grid(row=0, column=1)
+    trv_dues.grid(row=0, column=0, columnspan=2)
 
     trv_dues.heading(1, text='Customer Code')
     trv_dues.heading(2, text='Customer Name')
@@ -679,6 +712,11 @@ def updateDueList():
 
     for i in dues_tuple_list:
         trv_dues.insert("", "end", values=i)
+
+    trv_total_entry = defaultEntry(
+        DueList_frame, "Total items in the list", 1, 0, entryWidth)
+    trv_total_entry.insert(0, f"{len(dues_tuple_list)}")
+    trv_total_entry.config(state="disabled")
 
     conn.commit()
 
@@ -834,7 +872,7 @@ def SearchDues_frame():
 
         trv_dues = ttk.Treeview(DueList_frame, columns=(
             1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
-        trv_dues.grid(row=0, column=1)
+        trv_dues.grid(row=0, column=0, columnspan=2)
 
         trv_dues.heading(1, text='Customer Code')
         trv_dues.heading(2, text='Customer Name')
@@ -862,6 +900,11 @@ def SearchDues_frame():
 
         for i in dues_tuple_list:
             trv_dues.insert("", "end", values=i)
+
+        trv_total_entry = defaultEntry(
+            DueList_frame, "Total items in the list", 2, 0, entryWidth)
+        trv_total_entry.insert(0, f"{len(dues_tuple_list)}")
+        trv_total_entry.config(state="disabled")
 
         conn.commit()
 
@@ -896,8 +939,8 @@ SalesList_Frame_sales = defaultFrame(saleFrame, "Sales List", 0, 0)
 def UpdateSalesList_sales():
 
     trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
-                             show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
-    trv_sales.grid(row=0, column=0)
+                             show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
+    trv_sales.grid(row=0, column=0, columnspan=4)
 
     trv_sales.heading(1, text='Invoice Number')
     trv_sales.heading(2, text='Customer Name')
@@ -931,6 +974,11 @@ def UpdateSalesList_sales():
 
     for i in sales_tuple_list:
         trv_sales.insert("", "end", values=i)
+
+    trv_total_entry = defaultEntry(
+        SalesList_Frame_sales, "Total items in the list", 1, 2, entryWidth)
+    trv_total_entry.insert(0, f"{len(sales_tuple_list)}")
+    trv_total_entry.config(state="disabled")
 
     conn.commit()
 
@@ -992,7 +1040,7 @@ def UpdateSalesList_sales():
 
             trv_sales_selected = ttk.Treeview(salesInformationFrame, columns=(1, 2, 3, 4, 5),
                                               show="headings", height=int(0.00600*float(down)), padding=5, style="Custom.Treeview")
-            trv_sales_selected.grid(row=3, column=0, columnspan=2, pady=10)
+            trv_sales_selected.grid(row=3, column=0, columnspan=3, pady=10)
 
             trv_sales_selected.heading(1, text='Product')
             trv_sales_selected.heading(2, text='Weight')
@@ -1039,27 +1087,25 @@ def UpdateSalesList_sales():
                 title="Selection Error", message="You didn't select any sales from the list.")
 
     salesInformationButton = defaultButton(
-        SalesList_Frame_sales, "Details of selected Sales", 1, 0, W+E, command=getSalesInformationSelected)
+        SalesList_Frame_sales, "Details of selected Sales", 2, 3, W+E, command=getSalesInformationSelected)
 
 
-SalesSearch_Frame_sales = defaultFrame(
-    saleFrame, "Search by Customer's Name, Phone number, Invoice Number or Date", 1, 0)
+# SalesSearch_Frame_sales = defaultFrame(
+    # saleFrame, "Search by Customer's Name, Phone number, Invoice Number or Date", 1, 0)
 
 
 def salesSearch_sales():
 
-    Label(SalesSearch_Frame_sales, text="Search Sales: ",
-          font=f"Courier {fontSize} bold").grid(row=0, column=0, sticky=E)
-    searchSales_Entry_sales = ttk.Entry(SalesSearch_Frame_sales, width=entryWidth*3, justify=RIGHT,
+    searchSales_Entry_sales = ttk.Entry(SalesList_Frame_sales, width=entryWidth, justify=RIGHT,
                                         font=f"Courier {fontSize} bold")
     searchSales_Entry_sales.grid(
-        row=0, column=1, pady=5, sticky=W+E, columnspan=2)
+        row=1, column=0, pady=5, sticky=W+E, columnspan=2)
 
     def searchSales_List_sales():
 
         trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
-                                 show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
-        trv_sales.grid(row=0, column=0)
+                                 show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
+        trv_sales.grid(row=0, column=0, columnspan=4)
 
         trv_sales.heading(1, text='Invoice Number')
         trv_sales.heading(2, text='Customer Name')
@@ -1097,18 +1143,131 @@ def salesSearch_sales():
         for i in sales_tuple_list:
             trv_sales.insert("", "end", values=i)
 
+        trv_total_entry = defaultEntry(
+            SalesList_Frame_sales, "Total items in the list", 1, 2, entryWidth)
+        trv_total_entry.insert(0, f"{len(sales_tuple_list)}")
+        trv_total_entry.config(state="disabled")
+
         conn.commit()
 
         conn.close()
 
+        def getSalesInformationSelected():
+            try:
+                selectedSalesIID = trv_sales.selection()[0]
+                salesCode = trv_sales.item(selectedSalesIID)["values"][0]
+                customer_name_selected = trv_sales.item(
+                    selectedSalesIID)["values"][1]
+                customer_phone_selected = trv_sales.item(selectedSalesIID)[
+                    "values"][2]
+                net_total_selected = trv_sales.item(
+                    selectedSalesIID)["values"][3]
+                paid_total_selected = trv_sales.item(
+                    selectedSalesIID)["values"][4]
+                due_total_selected = trv_sales.item(
+                    selectedSalesIID)["values"][5]
+
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"select products.product,products.weight, products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={salesCode}")
+                sales_product_information = cursor.fetchall()
+
+                total_sales_without_discounts = 0.0
+                for i in sales_product_information:
+                    total_sales_without_discounts += float(i[4])
+
+                discount_selected = ((total_sales_without_discounts -
+                                      float(net_total_selected)) / total_sales_without_discounts) * 100.0
+
+                conn.commit()
+                conn.close()
+
+                salesDetails_window = Tk()
+                salesDetails_window.title(f"{salesCode} Information")
+                salesDetails_window.iconbitmap(icon_path)
+
+                salesInformationFrame = defaultFrame(
+                    salesDetails_window, "Sales Information", 0, 0)
+
+                scEntry = defaultEntry(salesInformationFrame,
+                                       "Sales Code", 0, 0, entryWidth)
+                cnEntry = defaultEntry(salesInformationFrame,
+                                       "Customer Name", 1, 0, entryWidth)
+                cpEntry = defaultEntry(salesInformationFrame,
+                                       "Customer Phone", 2, 0, entryWidth)
+                tsEntry = defaultEntry(salesInformationFrame,
+                                       "Total Sales", 4, 0, entryWidth)
+                dcEntry = defaultEntry(salesInformationFrame,
+                                       "Discount", 5, 0, entryWidth)
+                ntEntry = defaultEntry(salesInformationFrame,
+                                       "Net Total Sales", 6, 0, entryWidth)
+                paEntry = defaultEntry(salesInformationFrame,
+                                       "Paid amount", 7, 0, entryWidth)
+
+                duEntry = defaultEntry(salesInformationFrame,
+                                       "Due Total", 8, 0, entryWidth)
+
+                trv_sales_selected = ttk.Treeview(salesInformationFrame, columns=(1, 2, 3, 4, 5),
+                                                  show="headings", height=int(0.00600*float(down)), padding=5, style="Custom.Treeview")
+                trv_sales_selected.grid(row=3, column=0, columnspan=2, pady=10)
+
+                trv_sales_selected.heading(1, text='Product')
+                trv_sales_selected.heading(2, text='Weight')
+                trv_sales_selected.heading(3, text='Price')
+                trv_sales_selected.heading(4, text='Quantity')
+                trv_sales_selected.heading(5, text='Total Cost')
+
+                trv_sales_selected.column(1, anchor=CENTER,
+                                          width=100)
+                trv_sales_selected.column(2, anchor=CENTER,
+                                          width=80)
+                trv_sales_selected.column(3, anchor=CENTER,
+                                          width=90)
+                trv_sales_selected.column(4, anchor=CENTER,
+                                          width=80)
+                trv_sales_selected.column(5, anchor=CENTER,
+                                          width=100)
+
+                for i in sales_product_information:
+                    trv_sales_selected.insert("", "end", values=i)
+
+                scEntry.insert(0, salesCode)
+                cnEntry.insert(0, customer_name_selected)
+                cpEntry.insert(0, customer_phone_selected)
+                tsEntry.insert(0, total_sales_without_discounts)
+                dcEntry.insert(0, str(discount_selected) + "%")
+                ntEntry.insert(0, net_total_selected)
+                paEntry.insert(0, paid_total_selected)
+                duEntry.insert(0, due_total_selected)
+
+                scEntry.config(state="disabled")
+                cnEntry.config(state="disabled")
+                cpEntry.config(state="disabled")
+                tsEntry.config(state="disabled")
+                dcEntry.config(state="disabled")
+                ntEntry.config(state="disabled")
+                paEntry.config(state="disabled")
+                duEntry.config(state="disabled")
+
+                salesDetails_window.mainloop()
+
+            except Exception as identifier:
+                messagebox.showerror(
+                    title="Selection Error", message="You didn't select any sales from the list.")
+
+        salesInformationButton = defaultButton(
+            SalesList_Frame_sales, "Details of selected Sales", 2, 3, W+E, command=getSalesInformationSelected)
+
     searchSales_Button_sales = defaultButton(
-        SalesSearch_Frame_sales, "Search", 1, 2, W+E, command=searchSales_List_sales)
+        SalesList_Frame_sales, "Search", 2, 1, W+E, command=searchSales_List_sales)
 
     def resetSales_List_sales():
         UpdateSalesList_sales()
 
     resetSales_Button_sales = defaultButton(
-        SalesSearch_Frame_sales, "Reset", 1, 1, W+E, command=resetSales_List_sales)
+        SalesList_Frame_sales, "Reset", 2, 0, W+E, command=resetSales_List_sales)
 
 
 UpdateSalesList_sales()
@@ -1977,6 +2136,11 @@ def updateStockList_stocks():
 
     for i in stocks_tuple_list:
         trv_stocks.insert("", "end", values=i)
+
+    trv_total_entry = defaultEntry(
+        stockList_frame_stocks, "Total items in the list", 2, 0, entryWidth)
+    trv_total_entry.insert(0, f"{len(stocks_tuple_list)}")
+    trv_total_entry.config(state="disabled")
     conn.commit()
     conn.close()
 
@@ -2227,6 +2391,11 @@ def searchStocks_stocks():
 
     for i in stocks_tuple_list:
         trv_stocks.insert("", "end", values=i)
+    trv_total_entry = defaultEntry(
+        stockList_frame_stocks, "Total items in the list", 2, 0, entryWidth)
+    trv_total_entry.insert(0, f"{len(stocks_tuple_list)}")
+    trv_total_entry.config(state="disabled")
+
     conn.commit()
     conn.close()
 
@@ -2409,6 +2578,10 @@ def updateCustomersList():
 
     for i in customers_tuple_list:
         trv_customers.insert("", "end", values=i)
+    trv_total_entry = defaultEntry(
+        customerListFrame_customers, "Total items in the list", 2, 1, entryWidth)
+    trv_total_entry.insert(0, f"{len(customers_tuple_list)}")
+    trv_total_entry.config(state="disabled")
     conn.commit()
     conn.close()
 
@@ -2655,7 +2828,7 @@ def addCustomer_customers():
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            default_code = 1000
+            default_code = 1001
 
             cursor.execute("select customer_code from customers")
             code_tuple_list = cursor.fetchall()
@@ -2764,6 +2937,10 @@ def searchCustomer():
 
     for i in customers_tuple_list:
         trv_customers.insert("", "end", values=i)
+    trv_total_entry = defaultEntry(
+        customerListFrame_customers, "Total items in the list", 2, 1, entryWidth)
+    trv_total_entry.insert(0, f"{len(customers_tuple_list)}")
+    trv_total_entry.config(state="disabled")
     conn.commit()
     conn.close()
 
@@ -3039,6 +3216,10 @@ def updateProductsList():
 
     for i in products_tuple_list:
         trv_products.insert("", "end", values=i)
+    trv_total_entry = defaultEntry(
+        productListFrame_products, "Total items in the list", 2, 1, entryWidth)
+    trv_total_entry.insert(0, f"{len(products_tuple_list)}")
+    trv_total_entry.config(state="disabled")
 
     conn.commit()
     conn.close()
@@ -3370,6 +3551,10 @@ def searchProduct():
 
     for i in products_tuple_list:
         trv_products.insert("", "end", values=i)
+    trv_total_entry = defaultEntry(
+        productListFrame_products, "Total items in the list", 2, 1, entryWidth)
+    trv_total_entry.insert(0, f"{len(products_tuple_list)}")
+    trv_total_entry.config(state="disabled")
 
     conn.commit()
     conn.close()

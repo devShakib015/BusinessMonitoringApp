@@ -18,7 +18,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="Business monitoring App",
-      version="2.0",
+      version="3.0",
       description="Manages your business.",
       options={"build_exe": build_exe_options},
       executables=[Executable("BMA.py", icon=icon, base=base)])

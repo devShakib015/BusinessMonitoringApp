@@ -12,6 +12,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 
+import xlsxwriter
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(BASE_DIR, "main.db")
 icon_path = os.path.join(BASE_DIR, "b.ico")
@@ -447,6 +449,175 @@ def mainApp(state):
 
         c.save()
 
+    def print_as_excel(tuple_list):
+        outfiledir = filedialog.asksaveasfilename(
+            initialdir="/", defaultextension=".xlxs", title="Select file", filetypes=(("Excel Files", "*.xlsx"), ("all files", "*.*")))
+
+        with xlsxwriter.Workbook(outfiledir) as workbook:
+            worksheet = workbook.add_worksheet()
+
+            for row_num, data in enumerate(tuple_list):
+                worksheet.write_row(row_num, 0, data)
+
+    def create_due_invoice(invoice_date, customer_code, customer_name, customer_phone, customer_address, previous_due, new_due_payment_amount, current_due):
+
+        # convert the font so it is compatible
+        pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
+        pdfmetrics.registerFont(TTFont('Verdana', 'Verdana.ttf'))
+
+        # Page information
+        page_width = 595
+        page_height = 842
+        margin = 13
+
+        i_d = f"{invoice_date}"
+        c_c = f"{customer_code}"
+        c_n = f"{customer_name}"
+        c_p = f"{customer_phone}"
+        c_a = f"{customer_address}"
+
+        timeZone = pytz.timezone("asia/dhaka")
+
+        ct = datetime.now(timeZone)
+        due_date_code = ct.strftime(
+            "%Y%m%d%H%M%S")
+
+        outfiledir = filedialog.askdirectory()
+        outfilepath = os.path.join(
+            outfiledir, c_c + "_" + due_date_code + "_" + c_n.split()[0] + "_" + c_n.split()[1] + '_due_payment.pdf')
+        # Creating a pdf file and setting a naming convention
+        c = canvas.Canvas(outfilepath)
+        c.setPageSize((page_width, page_height))
+        from reportlab.lib.colors import HexColor
+        from reportlab.lib import colors
+        from reportlab.lib.colors import Color
+        red50transparent = Color(100, 0, 0, alpha=0.5)
+        blue30transparent = Color(0, 0, 100, alpha=0.3)
+        goodColor = HexColor("#2b92c5")
+
+        # sets fill color like orange
+
+        y = page_height - margin*10
+        x = 4*margin
+
+        # Invoice information
+        c.setFont('Verdana', 20)
+        text = 'Biocin Bangladesh'
+        # text_width = stringWidth(text, 'Arial', 10)
+        c.drawString(4*margin, page_height - margin*6, text)
+
+        c.setFont('Verdana', 20)
+        text = 'DUE INVOICE'
+        # text_width = stringWidth(text, 'Arial', 10)
+        c.drawString(4*margin + 280, page_height - margin*6, text)
+
+        # x2 = x + 30
+
+        # Invoice number
+        c.setFont('Verdana', 10)
+        text = 'Address: '
+        c.drawString(x, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + tw, y, "RP Gate, Rajendrapur, Gazipur, Dhaka")
+
+        text = 'Invoice Date: '
+        c.drawString(x + 280, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 280 + tw, y, i_d)
+        y -= margin
+
+        text = 'Phone: '
+        c.drawString(x, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + tw, y, "01716-573618")
+
+        text = 'Customer Code: '
+        c.drawString(x + 280, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 280 + tw, y, c_c)
+        y -= margin
+
+        text = 'Email: '
+        c.drawString(x, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + tw, y, "biocinbangladesh@gmail.com")
+
+        text = 'Customer Name: '
+        c.drawString(x + 280, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 280 + tw, y, c_n)
+        y -= margin
+
+        text = 'Customer Phone: '
+        c.drawString(x + 280, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 280 + tw, y, c_p)
+        y -= margin
+
+        text = 'Customer Address: '
+        c.drawString(x + 280, y, text)
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 280 + tw, y, c_a)
+        y -= margin
+        y -= margin*2
+
+        box_bottom = y - 400
+
+        c.setFillColor(HexColor("#EAEAEC"))
+        c.rect(x, y - 400, 490, 400, fill=True, stroke=True)
+
+        c.setFont('Verdana', 15)
+        c.setFillColor(colors.black)
+
+        y -= 80
+        t_s_text = "Previous Due: "
+        tw = stringWidth(t_s_text, 'Arial', 15)
+        c.drawString(x + 100, y-40, t_s_text)
+
+        t_text = f"{previous_due}"
+        t_text_width = stringWidth(t_text, 'Arial', 15)
+        c.drawString(x + 350, y-40, t_text)
+
+        y -= 25
+
+        t_s_text = "Due Payment Now: "
+        tw = stringWidth(t_s_text, 'Arial', 15)
+        c.drawString(x + 100, y-40, t_s_text)
+
+        t_text = f"({new_due_payment_amount})"
+        t_text_width = stringWidth(t_text, 'Arial', 15)
+        c.drawString(x + 350, y-40, t_text)
+
+        y -= 25
+        c.line(x + 50, y-27, x + 430, y-27)
+        y -= 10
+
+        t_s_text = "Current Due: "
+        tw = stringWidth(t_s_text, 'Arial', 15)
+        c.drawString(x + 100, y-40, t_s_text)
+
+        c.setFillColor(colors.red)
+        t_text = f"{current_due}"
+        t_text_width = stringWidth(t_text, 'Arial', 15)
+        c.drawString(x + 350, y-40, t_text)
+
+        c.setFillColor(colors.black)
+        box_bottom -= 80
+
+        text = "Authorized Signature"
+        tw = stringWidth(text, "Verdana", 15)
+        c.drawString(x + 10, box_bottom, text)
+        c.line(x + 10 - 5, box_bottom+22,
+               x + 10 + tw + 5, box_bottom+22)
+
+        text = "Customer Signature"
+        tw = stringWidth(text, "Verdana", 15)
+        c.drawString(x + 320, box_bottom, text)
+        c.line(x + 320 - 5, box_bottom+22,
+               x + 320 + tw + 5, box_bottom+22)
+
+        c.save()
+
     """
 
 
@@ -619,39 +790,10 @@ def mainApp(state):
         trv_total_entry.config(state="disabled")
 
         def printDetails():
-            file = filedialog.asksaveasfilename(title='Name a file', initialdir='\\', filetypes=(("PDF file", "*.pdf*"),),
-                                                defaultextension='.pdf')
-            print(file)
-
-            pdf = canvas.Canvas(f"{file}")
-            pdf.setFillColorRGB(1, 0, 0)  # choose your font colour
-            # choose your font type and font size
-            pdf.setFont("Helvetica", 18)
-            pdf.drawString(60, 800, "Name")
-            pdf.drawString(140, 800, "Weight")
-            pdf.drawString(220, 800, "SP")
-            pdf.drawString(300, 800, "CP")
-            pdf.drawString(380, 800, "TSA")
-            pdf.drawString(460, 800, "TSS")
-            pdf.drawString(540, 800, "RS")
-
-            pdf.setFillColorRGB(0, 0, 0)  # choose your font colour
-            pdf.setFont("Helvetica", 12)  # choose your font type and font size
-
-            n = 770
-            for i in product_details_list:
-                o = 60
-                for j in i:
-                    pdf.drawString(
-                        o, n, str(j))
-                    o += 80
-                n -= 60
-            pdf.save()
-            messagebox.showinfo(title="Pdf Saved",
-                                message="The pdf is saved successfully.")
+            print_as_excel(product_details_list)
 
         printDetailsButton = defaultButton(
-            productDetailsFrame, "Print Product Details", 2, 1, W+E, command=printDetails)
+            productDetailsFrame, "Generate Excel List", 2, 1, W+E, command=printDetails)
 
     updateProductsDetails()
 
@@ -667,20 +809,23 @@ def mainApp(state):
 
     def updateDueList():
         trv_dues = ttk.Treeview(DueList_frame, columns=(
-            1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+            1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
         trv_dues.grid(row=0, column=0, columnspan=2)
 
         trv_dues.heading(1, text='Customer Code')
         trv_dues.heading(2, text='Customer Name')
         trv_dues.heading(3, text='Customer Phone')
-        trv_dues.heading(4, text='Total Due Amount')
+        trv_dues.heading(4, text='Due Amount')
+        trv_dues.heading(5, text='Date')
 
         trv_dues.column(1, anchor=CENTER,
-                        width=int(0.1000*float(right)))
+                        width=int(0.0700*float(right)))
         trv_dues.column(2, anchor=CENTER,
-                        width=int(0.1400*float(right)))
+                        width=int(0.1200*float(right)))
         trv_dues.column(3, anchor=CENTER,
-                        width=int(0.1500*float(right)))
+                        width=int(0.1000*float(right)))
+        trv_dues.column(4, anchor=CENTER,
+                        width=int(0.1000*float(right)))
         trv_dues.column(4, anchor=CENTER,
                         width=int(0.1300*float(right)))
 
@@ -688,7 +833,7 @@ def mainApp(state):
 
         cursor = conn.cursor()
 
-        cursor.execute("select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc")
+        cursor.execute("select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc")
         dues_tuple_list = cursor.fetchall()
 
         for i in dues_tuple_list:
@@ -751,6 +896,7 @@ def mainApp(state):
                 c_ID = customer_info_dues[0][0]
                 c_code = customer_info_dues[0][1]
                 c_name = f"{customer_info_dues[0][2]} {customer_info_dues[0][3]}"
+
                 c_phone = customer_info_dues[0][5]
 
                 cursor.execute(
@@ -823,8 +969,44 @@ def mainApp(state):
                 if resposne == True:
                     conn.commit()
                     conn.close()
+                    customer_due_pay_amount_save_button = defaultButton(
+                        payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
 
-                    payDue_dues()
+                    def generate_due_invoice():
+                        c_code_due = customer_code_entry_dues.get()
+                        c_name_due = customer_Name_entry_dues.get()
+                        c_phone_due = customer_Phone_entry_dues.get()
+                        c_additional_due = customer_Net_Dues_entry_dues.get()
+                        pay_due_amount = customer_Pay_Amount_entry_dues.get()
+                        current_due = "{:.2f}".format(
+                            float(c_additional_due) - float(pay_due_amount))
+
+                        conn = sqlite3.connect(db_path)
+                        cursor = conn.cursor()
+
+                        cursor.execute(
+                            f"select address from customers where customer_code={int(c_code_due)}")
+                        c_address_due = cursor.fetchone()[0]
+
+                        conn.commit()
+
+                        cursor.execute(
+                            "select created_at from duesPaid order by ID desc limit 1 ")
+                        due_Date = cursor.fetchone()[0]
+
+                        conn.commit()
+
+                        conn.close()
+
+                        create_due_invoice(due_Date, c_code_due, c_name_due, c_phone_due,
+                                           c_address_due, c_additional_due, pay_due_amount, current_due)
+
+                        payDue_dues()
+                        generate_due_invoice_button = defaultButton(
+                            payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
+
+                    generate_due_invoice_button = defaultButton(
+                        payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
                     updateDueList()
                     stats()
 
@@ -836,9 +1018,11 @@ def mainApp(state):
 
         customer_due_pay_amount_save_button = defaultButton(
             payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
+        generate_due_invoice_button = defaultButton(
+            payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
 
     DueSearch_frame = defaultFrame(
-        dueFrame, "Search by Customer's name or phone or code", 1, 0)
+        dueFrame, "Search by Customer's name or phone, code or date", 1, 0)
 
     def SearchDues_frame():
 
@@ -848,22 +1032,25 @@ def mainApp(state):
         def updateSearchDues_list():
 
             trv_dues = ttk.Treeview(DueList_frame, columns=(
-                1, 2, 3, 4), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+                1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
             trv_dues.grid(row=0, column=0, columnspan=2)
 
             trv_dues.heading(1, text='Customer Code')
             trv_dues.heading(2, text='Customer Name')
             trv_dues.heading(3, text='Customer Phone')
-            trv_dues.heading(4, text='Total Due Amount')
+            trv_dues.heading(4, text='Due Amount')
+            trv_dues.heading(5, text='Date')
 
             trv_dues.column(1, anchor=CENTER,
-                            width=int(0.1200*float(right)))
+                            width=int(0.0700*float(right)))
             trv_dues.column(2, anchor=CENTER,
-                            width=int(0.1500*float(right)))
-            trv_dues.column(3, anchor=CENTER,
-                            width=int(0.1500*float(right)))
-            trv_dues.column(4, anchor=CENTER,
                             width=int(0.1200*float(right)))
+            trv_dues.column(3, anchor=CENTER,
+                            width=int(0.1000*float(right)))
+            trv_dues.column(4, anchor=CENTER,
+                            width=int(0.1000*float(right)))
+            trv_dues.column(4, anchor=CENTER,
+                            width=int(0.1300*float(right)))
 
             query = searchDues_dues_entry.get()
 
@@ -872,14 +1059,14 @@ def mainApp(state):
             cursor = conn.cursor()
 
             cursor.execute(
-                f"select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID where customers.customer_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' order by duesPaid.ID desc")
+                f"select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID where customers.customer_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or duesPaid.created_at like '%{query}%' order by duesPaid.ID desc")
             dues_tuple_list = cursor.fetchall()
 
             for i in dues_tuple_list:
                 trv_dues.insert("", "end", values=i)
 
             trv_total_entry = defaultEntry(
-                DueList_frame, "Total items in the list", 2, 0, entryWidth)
+                DueList_frame, "Total items in the list", 1, 0, entryWidth)
             trv_total_entry.insert(0, f"{len(dues_tuple_list)}")
             trv_total_entry.config(state="disabled")
 
@@ -953,6 +1140,12 @@ def mainApp(state):
             SalesList_Frame_sales, "Total items in the list", 1, 2, entryWidth)
         trv_total_entry.insert(0, f"{len(sales_tuple_list)}")
         trv_total_entry.config(state="disabled")
+
+        def print_sales():
+            print_as_excel(sales_tuple_list)
+
+        print_sales_info_button = defaultButton(
+            SalesList_Frame_sales, "Generate Excel List", 2, 2, W+E, command=print_sales)
 
         conn.commit()
 
@@ -1122,6 +1315,12 @@ def mainApp(state):
                 SalesList_Frame_sales, "Total items in the list", 1, 2, entryWidth)
             trv_total_entry.insert(0, f"{len(sales_tuple_list)}")
             trv_total_entry.config(state="disabled")
+
+            def print_sales():
+                print_as_excel(sales_tuple_list)
+
+            print_sales_info_button = defaultButton(
+                SalesList_Frame_sales, "Generate Excel List", 2, 2, W+E, command=print_sales)
 
             conn.commit()
 
@@ -2547,6 +2746,12 @@ def mainApp(state):
             customerListFrame_customers, "Total items in the list", 2, 1, entryWidth)
         trv_total_entry.insert(0, f"{len(customers_tuple_list)}")
         trv_total_entry.config(state="disabled")
+
+        def print_customers():
+            print_as_excel(customers_tuple_list)
+
+        print_customer_info_button = defaultButton(
+            customerListFrame_customers, "Generate Excel List", 2, 0, W+E, command=print_customers)
         conn.commit()
         conn.close()
 
@@ -2903,6 +3108,12 @@ def mainApp(state):
             customerListFrame_customers, "Total items in the list", 2, 1, entryWidth)
         trv_total_entry.insert(0, f"{len(customers_tuple_list)}")
         trv_total_entry.config(state="disabled")
+
+        def print_customers():
+            print_as_excel(customers_tuple_list)
+
+        print_customer_info_button = defaultButton(
+            customerListFrame_customers, "Generate Excel List", 2, 0, W+E, command=print_customers)
         conn.commit()
         conn.close()
 
@@ -3873,7 +4084,7 @@ def login():
 
     github = Label(loginWindow, text="Github",
                    fg="#e4324c", cursor="hand2")
-    github.grid(row=3, column=0, pady=5)
+    github.grid(row=3, column=0, pady=5, sticky=E)
     github.bind(
         "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
 
@@ -3885,7 +4096,7 @@ def login():
 
     facebook = Label(loginWindow, text="Facebook",
                      fg="#e4324c", cursor="hand2")
-    facebook.grid(row=3, column=2)
+    facebook.grid(row=3, column=2, sticky=W)
     facebook.bind(
         "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
 

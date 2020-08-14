@@ -29,7 +29,7 @@ def mainApp(state):
 
     #------------------------ Default width and height --------------------------------#
 
-    entryWidth = int(0.01542*float(right))
+    entryWidth = int(0.01442*float(right))
     fontSize = int(0.00829*float(right))
 
     # width = root.winfo_width()
@@ -49,7 +49,7 @@ def mainApp(state):
         frame = LabelFrame(parent, text=caption, padx=20,
                            pady=20, font=f"Courier {fontSize} bold")
         frame.grid(row=row, column=column, padx=20,
-                   pady=20, **options, sticky=W+E)
+                   pady=20, **options, sticky="nswe")
         return frame
 
     #------------------------ Default Entry Function ----------------------------------------#
@@ -115,8 +115,8 @@ def mainApp(state):
     noteStyler.configure("TNotebook", background="#161C22",
                          tabposition='wn', tabmargins=[0, 0, 0, 0])
 
-    noteStyler.configure("TNotebook.Tab", background="#204051", width=15, foreground="white", relief=GROOVE, font=(
-        "times", int(0.00829*float(right))),  padding=[10, 10, 10, 10])
+    noteStyler.configure("TNotebook.Tab", background="#204051", width=17, foreground="white", relief=GROOVE, font=(
+        "verdana", int(0.00629*float(right))),  padding=[5, 10, 10, 10])
 
     noteStyler.map("TNotebook.Tab", background=[
         ("selected", "#e4324c")], foreground=[("selected", "white")])
@@ -138,7 +138,8 @@ def mainApp(state):
     stockFrame = Frame(notebook, width=right, height=down, pady=10)
     stockFrame.pack(fill="both", expand=1)
 
-    saleFrame = Frame(notebook, width=right, height=down, pady=10)
+    saleFrame = Frame(notebook, width=right, height=down,
+                      pady=10, padx=(right * 0.040))
     saleFrame.pack(fill="both", expand=1)
 
     dueFrame = Frame(notebook, width=right, height=down, pady=10)
@@ -902,21 +903,21 @@ def mainApp(state):
             1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
         trv_dues.grid(row=0, column=0, columnspan=2)
 
-        trv_dues.heading(1, text='Customer Code')
-        trv_dues.heading(2, text='Customer Name')
-        trv_dues.heading(3, text='Customer Phone')
+        trv_dues.heading(1, text='Code')
+        trv_dues.heading(2, text='Name')
+        trv_dues.heading(3, text='Phone')
         trv_dues.heading(4, text='Due Amount')
         trv_dues.heading(5, text='Date')
 
         trv_dues.column(1, anchor=CENTER,
                         width=int(0.0700*float(right)))
         trv_dues.column(2, anchor=CENTER,
-                        width=int(0.1200*float(right)))
+                        width=int(0.1000*float(right)))
         trv_dues.column(3, anchor=CENTER,
                         width=int(0.1000*float(right)))
         trv_dues.column(4, anchor=CENTER,
-                        width=int(0.1000*float(right)))
-        trv_dues.column(4, anchor=CENTER,
+                        width=int(0.0700*float(right)))
+        trv_dues.column(5, anchor=CENTER,
                         width=int(0.1300*float(right)))
 
         conn = sqlite3.connect(db_path)
@@ -1112,7 +1113,7 @@ def mainApp(state):
             payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
 
     DueSearch_frame = defaultFrame(
-        dueFrame, "Search by Customer's name or phone, code or date", 1, 0)
+        dueFrame, "Search by code, name, phone or date", 1, 0)
 
     def SearchDues_frame():
 
@@ -1122,24 +1123,24 @@ def mainApp(state):
         def updateSearchDues_list():
 
             trv_dues = ttk.Treeview(DueList_frame, columns=(
-                1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+                1, 2, 3, 4, 5), show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
             trv_dues.grid(row=0, column=0, columnspan=2)
 
-            trv_dues.heading(1, text='Customer Code')
-            trv_dues.heading(2, text='Customer Name')
-            trv_dues.heading(3, text='Customer Phone')
+            trv_dues.heading(1, text='Code')
+            trv_dues.heading(2, text='Name')
+            trv_dues.heading(3, text='Phone')
             trv_dues.heading(4, text='Due Amount')
             trv_dues.heading(5, text='Date')
 
             trv_dues.column(1, anchor=CENTER,
                             width=int(0.0700*float(right)))
             trv_dues.column(2, anchor=CENTER,
-                            width=int(0.1200*float(right)))
+                            width=int(0.1000*float(right)))
             trv_dues.column(3, anchor=CENTER,
                             width=int(0.1000*float(right)))
             trv_dues.column(4, anchor=CENTER,
-                            width=int(0.1000*float(right)))
-            trv_dues.column(4, anchor=CENTER,
+                            width=int(0.0700*float(right)))
+            trv_dues.column(5, anchor=CENTER,
                             width=int(0.1300*float(right)))
 
             query = searchDues_dues_entry.get()
@@ -1204,9 +1205,9 @@ def mainApp(state):
         trv_sales.column(1, anchor=CENTER,
                          width=int(0.1000*float(right)))
         trv_sales.column(2, anchor=CENTER,
-                         width=int(0.1250*float(right)))
+                         width=int(0.1000*float(right)))
         trv_sales.column(3, anchor=CENTER,
-                         width=int(0.1500*float(right)))
+                         width=int(0.1300*float(right)))
         trv_sales.column(4, anchor=CENTER,
                          width=int(0.1000*float(right)))
         trv_sales.column(5, anchor=CENTER,
@@ -1214,7 +1215,7 @@ def mainApp(state):
         trv_sales.column(6, anchor=CENTER,
                          width=int(0.1000*float(right)))
         trv_sales.column(7, anchor=CENTER,
-                         width=int(0.1500*float(right)))
+                         width=int(0.1300*float(right)))
 
         conn = sqlite3.connect(db_path)
 
@@ -2375,7 +2376,7 @@ def mainApp(state):
     def updateStockList_stocks():
 
         trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5, 6),
-                                  show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                  show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_stocks.grid(row=0, column=0, columnspan=2)
 
         trv_stocks.heading(1, text="stock ID")
@@ -2386,10 +2387,10 @@ def mainApp(state):
         trv_stocks.heading(6, text='Added Date')
 
         trv_stocks.column(1, anchor=CENTER, width=int(0.050*float(right)))
-        trv_stocks.column(2, anchor=CENTER, width=int(0.100*float(right)))
-        trv_stocks.column(3, anchor=CENTER, width=int(0.070*float(right)))
-        trv_stocks.column(4, anchor=CENTER, width=int(0.100*float(right)))
-        trv_stocks.column(5, anchor=CENTER, width=int(0.100*float(right)))
+        trv_stocks.column(2, anchor=CENTER, width=int(0.090*float(right)))
+        trv_stocks.column(3, anchor=CENTER, width=int(0.050*float(right)))
+        trv_stocks.column(4, anchor=CENTER, width=int(0.090*float(right)))
+        trv_stocks.column(5, anchor=CENTER, width=int(0.090*float(right)))
         trv_stocks.column(6, anchor=CENTER, width=int(0.120*float(right)))
 
         conn = sqlite3.connect(db_path)
@@ -2624,7 +2625,7 @@ def mainApp(state):
     def searchStocks_stocks():
 
         trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5, 6),
-                                  show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                  show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_stocks.grid(row=0, column=0, columnspan=2)
 
         trv_stocks.heading(1, text="stock ID")
@@ -2804,12 +2805,12 @@ def mainApp(state):
     #------------------------ Create funtion to update and showing customers list ------------------------#
 
     customerListFrame_customers = defaultFrame(
-        customerFrame, "Customer List", 0, 1, rowspan=3)
+        customerFrame, "Customer List", 0, 1, rowspan=2)
 
     def updateCustomersList():
 
         trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
-                                     show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                     show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_customers.grid(row=0, column=0, columnspan=3)
 
         trv_customers.heading(1, text='Code')
@@ -3074,13 +3075,13 @@ def mainApp(state):
         customerFrame, "Add New Customer", 0, 0)
 
     customer_first_name_Entry_customers = defaultEntry(
-        customerAddFrame_customers, "First Name", 0, 0, 20)
+        customerAddFrame_customers, "First Name", 0, 0, entryWidth)
     customer_last_name_Entry_customers = defaultEntry(
-        customerAddFrame_customers, "Last Name", 1, 0, 20)
+        customerAddFrame_customers, "Last Name", 1, 0, entryWidth)
     customer_address_Entry_customers = defaultEntry(
-        customerAddFrame_customers, "Address", 2, 0, 20)
+        customerAddFrame_customers, "Address", 2, 0, entryWidth)
     customer_phone_Entry_customers = defaultEntry(
-        customerAddFrame_customers, "Phone", 3, 0, 20)
+        customerAddFrame_customers, "Phone", 3, 0, entryWidth)
 
     def addCustomer_customers():
         try:
@@ -3165,13 +3166,13 @@ def mainApp(state):
         customerFrame, "Search by name, address or phone", 1, 0)
 
     searchCustomerEntry_customers = defaultEntry(
-        searchCustomerFrame_customers, "Search Customer", 0, 0, 20)
+        searchCustomerFrame_customers, "Search Customer", 0, 0, entryWidth)
 
     def searchCustomer():
         query = searchCustomerEntry_customers.get()
 
         trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
-                                     show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                     show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_customers.grid(row=0, column=0, columnspan=3)
 
         trv_customers.heading(1, text='Code')
@@ -3454,12 +3455,12 @@ def mainApp(state):
     #------------------------ Create funtion to update and showing Products list ------------------------#
 
     productListFrame_products = defaultFrame(
-        productFrame, "Products List", 0, 1, rowspan=3)
+        productFrame, "Products List", 0, 1, rowspan=2)
 
     def updateProductsList():
 
         trv_products = ttk.Treeview(productListFrame_products, columns=(1, 2, 3),
-                                    show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                    show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_products.grid(row=0, column=0, columnspan=3)
 
         trv_products.heading(1, text='Name')
@@ -3718,11 +3719,11 @@ def mainApp(state):
         productFrame, "Add New Product", 0, 0)
 
     product_name_Entry_products = defaultEntry(
-        productAddFrame_products, "Product Name", 0, 0, 20)
+        productAddFrame_products, "Product Name", 0, 0, entryWidth)
     product_weight_entry_products = defaultEntry(
-        productAddFrame_products, "Weight", 1, 0, 20)
+        productAddFrame_products, "Weight", 1, 0, entryWidth)
     product_price_Entry_products = defaultEntry(
-        productAddFrame_products, "Price", 2, 0, 20)
+        productAddFrame_products, "Price", 2, 0, entryWidth)
 
     def addProduct_products():
         try:
@@ -3786,13 +3787,13 @@ def mainApp(state):
         productFrame, "Search by name", 1, 0)
 
     searchProductEntry_products = defaultEntry(
-        searchProductFrame_products, "Search Product", 0, 0, 20)
+        searchProductFrame_products, "Search Product", 0, 0, entryWidth)
 
     def searchProduct():
         query = searchProductEntry_products.get()
 
         trv_products = ttk.Treeview(productListFrame_products, columns=(1, 2, 3),
-                                    show="headings", height=int(0.0140*float(right)), padding=5, style="Custom.Treeview")
+                                    show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
         trv_products.grid(row=0, column=0, columnspan=3)
 
         trv_products.heading(1, text='Name')
@@ -4130,7 +4131,7 @@ def login():
 
     loginFrame = LabelFrame(
         loginWindow, text="Login as an Admin", padx=20, pady=20)
-    loginFrame.grid(row=1, column=0, padx=20, pady=20, columnspan=3)
+    loginFrame.grid(row=1, column=0, padx=40, pady=15, columnspan=3)
 
     userLabel = Label(loginFrame, text="Username : ", font="verdana 10").grid(
         row=1, column=0, padx=10, sticky=E)
@@ -4151,8 +4152,8 @@ def login():
                          activebackground="#e4324c", activeforeground="#fffff0", font="verdana 10", command=getAccount).grid(row=3, column=1, sticky=W+E, pady=10)
     employeeFrame = LabelFrame(
         loginWindow, text="Login as an Employee", padx=20, pady=20)
-    employeeFrame.grid(row=0, column=0, padx=20,
-                       pady=20, sticky=W+E, columnspan=3)
+    employeeFrame.grid(row=0, column=0, padx=40,
+                       pady=50, sticky=W+E, columnspan=3)
 
     def employeeLogin():
         loginWindow.destroy()
@@ -4171,25 +4172,7 @@ def login():
     x = datetime.now(timeZone)
     detailsLabel = Label(
         loginWindow, text=f"Copyright @ Shakib, {x.year}", font="verdana 8")
-    detailsLabel.grid(row=2, column=0, columnspan=3)
-
-    github = Label(loginWindow, text="Github",
-                   fg="#e4324c", cursor="hand2")
-    github.grid(row=3, column=0, pady=5, sticky=E)
-    github.bind(
-        "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
-
-    website = Label(loginWindow, text="Portfolio",
-                    fg="#e4324c", cursor="hand2")
-    website.grid(row=3, column=1)
-    website.bind(
-        "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
-
-    facebook = Label(loginWindow, text="Facebook",
-                     fg="#e4324c", cursor="hand2")
-    facebook.grid(row=3, column=2, sticky=W)
-    facebook.bind(
-        "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
+    detailsLabel.grid(row=2, column=0, columnspan=3, pady=10)
 
     loginWindow.mainloop()
 

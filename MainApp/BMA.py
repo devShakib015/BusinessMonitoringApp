@@ -3758,24 +3758,24 @@ def mainApp(state):
             webbrowser.open_new(url)
 
         detailsLabel = Label(
-            about_frame, text="This software is completely build using python. \nAuthor: Hossain KM Shahriar (Shakib)")
+            about_frame, text="This software is completely built using python. \nAuthor: Hossain KM Shahriar (Shakib)", font="verdana 13")
         detailsLabel.pack()
 
         github = Label(about_frame, text="Github",
-                       fg="blue", cursor="hand2")
-        github.pack()
+                       fg="#e4324c", cursor="hand2")
+        github.pack(side=LEFT)
         github.bind(
             "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
 
         website = Label(about_frame, text="Portfolio",
-                        fg="blue", cursor="hand2")
-        website.pack()
+                        fg="#e4324c", cursor="hand2")
+        website.pack(side=LEFT)
         website.bind(
             "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
 
         facebook = Label(about_frame, text="Facebook",
-                         fg="blue", cursor="hand2")
-        facebook.pack()
+                         fg="#e4324c", cursor="hand2")
+        facebook.pack(side=LEFT)
         facebook.bind(
             "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
 
@@ -3828,7 +3828,7 @@ def login():
 
     loginFrame = LabelFrame(
         loginWindow, text="Login as an Admin", padx=20, pady=20)
-    loginFrame.grid(row=1, column=0, padx=20, pady=20)
+    loginFrame.grid(row=1, column=0, padx=20, pady=20, columnspan=3)
 
     userLabel = Label(loginFrame, text="Username : ", font="verdana 10").grid(
         row=1, column=0, padx=10, sticky=E)
@@ -3849,7 +3849,8 @@ def login():
                          activebackground="#e4324c", activeforeground="#fffff0", font="verdana 10", command=getAccount).grid(row=3, column=1, sticky=W+E, pady=10)
     employeeFrame = LabelFrame(
         loginWindow, text="Login as an Employee", padx=20, pady=20)
-    employeeFrame.grid(row=0, column=0, padx=20, pady=20, sticky=W+E)
+    employeeFrame.grid(row=0, column=0, padx=20,
+                       pady=20, sticky=W+E, columnspan=3)
 
     def employeeLogin():
         loginWindow.destroy()
@@ -3860,6 +3861,33 @@ def login():
 
     normalUserButton = Button(employeeFrame, text="Login", padx=10, pady=5, bg="#e4324c", fg="white", border=0,
                               activebackground="#e4324c", activeforeground="#fffff0", font="verdana 10", command=employeeLogin).pack(pady=5, padx=10, anchor="center", fill="x")
+
+    def callback(url):
+        webbrowser.open_new(url)
+
+    timeZone = pytz.timezone("asia/dhaka")
+    x = datetime.now(timeZone)
+    detailsLabel = Label(
+        loginWindow, text=f"Copyright @ Shakib, {x.year}", font="verdana 8")
+    detailsLabel.grid(row=2, column=0, columnspan=3)
+
+    github = Label(loginWindow, text="Github",
+                   fg="#e4324c", cursor="hand2")
+    github.grid(row=3, column=0, pady=5)
+    github.bind(
+        "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
+
+    website = Label(loginWindow, text="Portfolio",
+                    fg="#e4324c", cursor="hand2")
+    website.grid(row=3, column=1)
+    website.bind(
+        "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
+
+    facebook = Label(loginWindow, text="Facebook",
+                     fg="#e4324c", cursor="hand2")
+    facebook.grid(row=3, column=2)
+    facebook.bind(
+        "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
 
     loginWindow.mainloop()
 

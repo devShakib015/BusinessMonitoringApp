@@ -144,6 +144,9 @@ def mainApp(state):
     dueFrame = Frame(notebook, width=right, height=down, pady=10)
     dueFrame.pack(fill="both", expand=1)
 
+    daily_stock_Frame = Frame(notebook, width=right, height=down, pady=10)
+    daily_stock_Frame.pack(fill="both", expand=1)
+
     statsFrame = Frame(notebook, width=right, height=down, pady=50, padx=50)
     statsFrame.pack(fill="both", expand=1)
 
@@ -163,6 +166,8 @@ def mainApp(state):
     notebook.add(stockFrame, text="Add Stocks",
                  state=state)
     notebook.add(productDetailsFrame, text="Product Details",
+                 state=state)
+    notebook.add(daily_stock_Frame, text="Stock Management",
                  state=state)
     notebook.add(statsFrame, text="Statistics",
                  state=state)
@@ -617,6 +622,91 @@ def mainApp(state):
                x + 320 + tw + 5, box_bottom+22)
 
         c.save()
+
+    """
+
+
+    Stock Management Start
+
+
+    """
+
+    def stockManagement():
+
+        def stockManagement_trv_list(date):
+
+            trv_stock_managementFrame = defaultFrame(
+                daily_stock_Frame, f"Daily Stock Management - {date}", 0, 1)
+
+            trv_stock_management = ttk.Treeview(trv_stock_managementFrame, columns=(
+                1, 2, 3, 4, 5), show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
+            trv_stock_management.grid(row=0, column=0, columnspan=2)
+
+            trv_stock_management.heading(1, text='ID')
+            trv_stock_management.heading(2, text='Product')
+            trv_stock_management.heading(3, text='Weight')
+            trv_stock_management.heading(4, text='Price')
+            trv_stock_management.heading(5, text='Stock Sold')
+
+            trv_stock_management.column(1, anchor=CENTER,
+                                        width=int(0.0600*float(right)))
+            trv_stock_management.column(2, anchor=CENTER,
+                                        width=int(0.1000*float(right)))
+            trv_stock_management.column(
+                3, anchor=CENTER, width=int(0.1000*float(right)))
+            trv_stock_management.column(
+                4, anchor=CENTER, width=int(0.1000*float(right)))
+            trv_stock_management.column(
+                5, anchor=CENTER, width=int(0.1000*float(right)))
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                f"select products.ID, products.product, products.weight, products.price, sum(stocks_removed.quantity) from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.created_at like '%{date}%' GROUP by stocks_removed.product_id")
+            stock_management_tuple_list = cursor.fetchall()
+
+            conn.commit()
+            conn.close()
+
+            for i in stock_management_tuple_list:
+                trv_stock_management.insert("", "end", values=i)
+
+            trv_total_entry = defaultEntry(
+                trv_stock_managementFrame, "Total items in the list", 1, 0, entryWidth)
+            trv_total_entry.insert(0, f"{len(stock_management_tuple_list)}")
+            trv_total_entry.config(state="disabled")
+
+            def printDetails():
+                print_as_excel(stock_management_tuple_list)
+
+            printDetailsButton = defaultButton(
+                trv_stock_managementFrame, "Generate Excel List", 2, 1, W+E, command=printDetails)
+
+        timeZone = pytz.timezone("asia/dhaka")
+        x = datetime.now(timeZone)
+        date = x.now().date()
+        stockManagement_trv_list(date)
+
+        search_stock_management_frame = defaultFrame(
+            daily_stock_Frame, "Search By date", 0, 0)
+
+        def searchStock_management_button():
+            query = searchEntry_stock_management.get()
+            stockManagement_trv_list(query)
+
+        searchEntry_stock_management = defaultEntry(
+            search_stock_management_frame, "Search", 0, 0, entryWidth)
+        searchButton_stock_management = defaultButton(
+            search_stock_management_frame, "Search", 1, 1, W+E, command=searchStock_management_button)
+
+        def resetStock_management_button():
+            stockManagement_trv_list(date)
+
+        resetButton_stock_management = defaultButton(
+            search_stock_management_frame, "Reset", 1, 0, W+E, command=resetStock_management_button)
+
+    stockManagement()
 
     """
 
@@ -2095,6 +2185,7 @@ def mainApp(state):
                                                             state="disabled")
 
                                                         deleteAll()
+                                                        stockManagement()
 
                                                         netAmountEntry_home.config(
                                                             state="enabled")

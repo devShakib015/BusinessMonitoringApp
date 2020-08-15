@@ -22,8 +22,8 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Management")
-    right = 1368  # root.winfo_screenwidth()  # 1280  #
-    down = 768  # root.winfo_screenheight()  # 720  #
+    right = root.winfo_screenwidth()  # 1280  #
+    down = root.winfo_screenheight()  # 720  #
     # root.geometry(f"{right}x{down}")
     # root.geometry(f"{right}x{down}")
 
@@ -898,10 +898,11 @@ def mainApp(state):
 
     DueList_frame = defaultFrame(dueFrame, "Paying Dues List", 0, 1, rowspan=2)
     main_dues_sql_query = "select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc"
+    payDues_frame = defaultFrame(dueFrame, "Pay Dues", 0, 0)
 
     def updateDueList(sql_query):
         trv_dues = ttk.Treeview(DueList_frame, columns=(
-            1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
+            1, 2, 3, 4, 5), show="headings", height=int(0.02500*float(down)), padding=5, style="Custom.Treeview")
         trv_dues.grid(row=0, column=0, columnspan=2)
 
         trv_dues.heading(1, text='Code')
@@ -940,8 +941,6 @@ def mainApp(state):
 
         conn.close()
 
-    payDues_frame = defaultFrame(dueFrame, "Pay Dues", 0, 0)
-
     def payDue_dues():
 
         customer_code_search_dues_entry = defaultEntry(
@@ -965,7 +964,6 @@ def mainApp(state):
 
         def searchCustomer_dues():
             try:
-
                 customer_code_entry_dues.config(state="enabled")
                 customer_Name_entry_dues.config(state="enabled")
                 customer_Phone_entry_dues.config(state="enabled")
@@ -1027,92 +1025,99 @@ def mainApp(state):
                 conn.commit()
                 conn.close()
 
+                def payDue_save_dues():
+                    try:
+                        pay_due_amount = customer_Pay_Amount_entry_dues.get()
+                        code = customer_code_search_dues_entry.get()
+
+                        conn = sqlite3.connect(db_path)
+                        cursor = conn.cursor()
+
+                        cursor.execute(
+                            f"select ID from customers where customer_code={int(code)}")
+                        c_ID = cursor.fetchone()[0]
+
+                        conn.commit()
+
+                        cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
+                                       (c_ID, float(pay_due_amount)))
+
+                        resposne = messagebox.askyesno(
+                            title="Confirm Pay Due", message="Are You Sure to Pay this due amount? This will be saved in database. After saving this information you cannot change.")
+                        if resposne == True:
+                            conn.commit()
+                            conn.close()
+                            customer_due_pay_amount_save_button = defaultButton(
+                                payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
+                            messagebox.showinfo(
+                                title="Pay Due Success", message="The due payment has been saved successfully.")
+
+                            def generate_due_invoice():
+
+                                c_code_due = customer_code_entry_dues.get()
+                                c_name_due = customer_Name_entry_dues.get()
+                                c_phone_due = customer_Phone_entry_dues.get()
+                                c_additional_due = customer_Net_Dues_entry_dues.get()
+                                pay_due_amount = customer_Pay_Amount_entry_dues.get()
+                                current_due = "{:.2f}".format(
+                                    float(c_additional_due) - float(pay_due_amount))
+
+                                conn = sqlite3.connect(db_path)
+                                cursor = conn.cursor()
+
+                                cursor.execute(
+                                    f"select address from customers where customer_code={int(c_code_due)}")
+                                c_address_due = cursor.fetchone()[0]
+
+                                conn.commit()
+
+                                cursor.execute(
+                                    "select created_at from duesPaid order by ID desc limit 1 ")
+                                due_Date = cursor.fetchone()[0]
+
+                                conn.commit()
+
+                                conn.close()
+
+                                create_due_invoice(due_Date, c_code_due, c_name_due, c_phone_due,
+                                                   c_address_due, c_additional_due, pay_due_amount, current_due)
+
+                                payDue_dues()
+                                generate_due_invoice_button = defaultButton(
+                                    payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
+
+                            generate_due_invoice_button = defaultButton(
+                                payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
+                            updateDueList(main_dues_sql_query)
+                            stats()
+
+                        else:
+                            return
+                    except Exception as identifier:
+                        messagebox.showerror(title="Customer Error",
+                                             message="Please enter valid Information.")
+
+                customer_due_pay_amount_save_button = defaultButton(
+                    payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
+
             except Exception as identifier:
                 customer_code_entry_dues.config(state="disabled")
                 customer_Name_entry_dues.config(state="disabled")
                 customer_Phone_entry_dues.config(state="disabled")
                 customer_Net_Dues_entry_dues.config(
                     state="disabled", foreground="red")
+                customer_code_search_dues_entry.delete(0, END)
                 messagebox.showerror(title="Customer Error",
                                      message="Please enter valid customer code.")
 
         customer_code_search_dues_button = defaultButton(
             payDues_frame, "Search", 1, 1, W+E, command=searchCustomer_dues)
 
-        def payDue_save_dues():
-            try:
-                pay_due_amount = customer_Pay_Amount_entry_dues.get()
-                code = customer_code_search_dues_entry.get()
+    customer_due_pay_amount_save_button = defaultButton(
+        payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
 
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select ID from customers where customer_code={int(code)}")
-                c_ID = cursor.fetchone()[0]
-
-                conn.commit()
-
-                cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
-                               (c_ID, float(pay_due_amount)))
-
-                resposne = messagebox.askyesno(
-                    title="Confirm Pay Due", message="Are You Sure to Pay this due amount?")
-                if resposne == True:
-                    conn.commit()
-                    conn.close()
-                    customer_due_pay_amount_save_button = defaultButton(
-                        payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
-
-                    def generate_due_invoice():
-                        c_code_due = customer_code_entry_dues.get()
-                        c_name_due = customer_Name_entry_dues.get()
-                        c_phone_due = customer_Phone_entry_dues.get()
-                        c_additional_due = customer_Net_Dues_entry_dues.get()
-                        pay_due_amount = customer_Pay_Amount_entry_dues.get()
-                        current_due = "{:.2f}".format(
-                            float(c_additional_due) - float(pay_due_amount))
-
-                        conn = sqlite3.connect(db_path)
-                        cursor = conn.cursor()
-
-                        cursor.execute(
-                            f"select address from customers where customer_code={int(c_code_due)}")
-                        c_address_due = cursor.fetchone()[0]
-
-                        conn.commit()
-
-                        cursor.execute(
-                            "select created_at from duesPaid order by ID desc limit 1 ")
-                        due_Date = cursor.fetchone()[0]
-
-                        conn.commit()
-
-                        conn.close()
-
-                        create_due_invoice(due_Date, c_code_due, c_name_due, c_phone_due,
-                                           c_address_due, c_additional_due, pay_due_amount, current_due)
-
-                        payDue_dues()
-                        generate_due_invoice_button = defaultButton(
-                            payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
-
-                    generate_due_invoice_button = defaultButton(
-                        payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
-                    updateDueList(main_dues_sql_query)
-                    stats()
-
-                else:
-                    return
-            except Exception as identifier:
-                messagebox.showerror(title="Customer Error",
-                                     message="Please enter valid Information.")
-                print(identifier)
-
-        customer_due_pay_amount_save_button = defaultButton(
-            payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
-        generate_due_invoice_button = defaultButton(
-            payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
+    generate_due_invoice_button = defaultButton(
+        payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
 
     DueSearch_frame = defaultFrame(
         dueFrame, "Search by code, name, phone or date", 1, 0)
@@ -1630,29 +1635,39 @@ def mainApp(state):
                         cursor = conn.cursor()
 
                         cursor.execute("select * from invoice_items")
-                        PRODUCTS_LIST = cursor.fetchall()
-                        for i in PRODUCTS_LIST:
-                            trv_home.insert("", "end", values=i)
+                        invoice_items_tuple_list = cursor.fetchall()
+
+                        for i in invoice_items_tuple_list:
+                            product, weight, price, total_cost = i
+                            trv_home.insert("", "end", values=(
+                                f"{invoice_items_tuple_list.index(i) + 1}", product, weight, price, total_cost))
 
                         conn.commit()
                         conn.close()
 
-                    trv_home = ttk.Treeview(productsListFrame_home, columns=(1, 2, 3, 4),
-                                            show="headings", height=int(0.0070*float(right)), padding=5, style="Custom.Treeview")
+                    trv_home = ttk.Treeview(productsListFrame_home, columns=(1, 2, 3, 4, 5),
+                                            show="headings", height=int(0.01250*float(down)), padding=5, style="Custom.Treeview")
                     trv_home.grid(row=0, column=0, columnspan=2)
 
-                    trv_home.heading(1, text='Product')
-                    trv_home.heading(2, text='Price')
-                    trv_home.heading(3, text='Quanity')
-                    trv_home.heading(4, text='Amount')
+                    # trv_home.tag_bind('ttk', '<1>', itemClicked)
+
+                    trv_home.heading(1, text='ID')
+                    trv_home.heading(2, text='Product')
+                    trv_home.heading(3, text='Price')
+                    trv_home.heading(4, text='Quanity')
+                    trv_home.heading(5, text='Total Cost')
+
                     trv_home.column(1, anchor=CENTER,
-                                    width=int(0.1250*float(right)))
+                                    width=int(0.0600*float(right)))
                     trv_home.column(2, anchor=CENTER,
                                     width=int(0.1250*float(right)))
                     trv_home.column(3, anchor=CENTER,
-                                    width=int(0.1250*float(right)))
+                                    width=int(0.1000*float(right)))
                     trv_home.column(4, anchor=CENTER,
+                                    width=int(0.0800*float(right)))
+                    trv_home.column(5, anchor=CENTER,
                                     width=int(0.1250*float(right)))
+
                     integerQuantity = int(quantity)
 
                     if integerQuantity > int(stock):
@@ -1686,7 +1701,7 @@ def mainApp(state):
                             try:
                                 selectedProductIID = trv_home.selection()[0]
                                 name = trv_home.item(selectedProductIID)[
-                                    "values"][0]
+                                    "values"][1]
 
                                 conn = sqlite3.connect(db_path)
                                 cursor = conn.cursor()
@@ -1779,10 +1794,10 @@ def mainApp(state):
                                 else:
                                     float_discount_percentage = float(
                                         discount_percentage)
-                                    if float_discount_percentage > 100.0:
+                                    if float_discount_percentage > 100.0 or float_discount_percentage < 0.0:
                                         discountEntry_home.delete(0, END)
                                         messagebox.showerror(
-                                            title="Discount Error", message="The discount ammount cannot be more than 100.")
+                                            title="Discount Error", message="The discount ammount cannot be more than 100 or less than 0.")
                                     else:
                                         fraction_discount_percentage = (
                                             float_discount_percentage / 100.0)
@@ -1821,10 +1836,10 @@ def mainApp(state):
                                 else:
                                     float_payment_amount = float(
                                         payment_amount)
-                                    if float_payment_amount > net_total:
+                                    if float_payment_amount > net_total or float_payment_amount < 0.0:
                                         paymentEntry_home.delete(0, END)
                                         messagebox.showerror(
-                                            title="Payment Error", message="The payment cannot be more than net total.")
+                                            title="Payment Error", message="The payment cannot be more than net total or less than 0.")
                                     else:
                                         due_amount = (
                                             net_total - float_payment_amount)
@@ -2089,23 +2104,27 @@ def mainApp(state):
 
         #------------------------ Display showing at the first in Invoice List but these don't work ----------------------------#
 
-        trv_home = ttk.Treeview(productsListFrame_home, columns=(1, 2, 3, 4),
-                                show="headings", height=int(0.00700*float(right)), padding=5, style="Custom.Treeview")
+        trv_home = ttk.Treeview(productsListFrame_home, columns=(1, 2, 3, 4, 5),
+                                show="headings", height=int(0.01250*float(down)), padding=5, style="Custom.Treeview")
         trv_home.grid(row=0, column=0, columnspan=2)
 
         # trv_home.tag_bind('ttk', '<1>', itemClicked)
 
-        trv_home.heading(1, text='Product')
-        trv_home.heading(2, text='Price')
-        trv_home.heading(3, text='Quanity')
-        trv_home.heading(4, text='Amount')
+        trv_home.heading(1, text='ID')
+        trv_home.heading(2, text='Product')
+        trv_home.heading(3, text='Price')
+        trv_home.heading(4, text='Quanity')
+        trv_home.heading(5, text='Total Cost')
+
         trv_home.column(1, anchor=CENTER,
-                        width=int(0.1250*float(right)))
+                        width=int(0.0600*float(right)))
         trv_home.column(2, anchor=CENTER,
                         width=int(0.1250*float(right)))
         trv_home.column(3, anchor=CENTER,
-                        width=int(0.1250*float(right)))
+                        width=int(0.1000*float(right)))
         trv_home.column(4, anchor=CENTER,
+                        width=int(0.0800*float(right)))
+        trv_home.column(5, anchor=CENTER,
                         width=int(0.1250*float(right)))
 
         LLLL = []
@@ -2748,15 +2767,12 @@ def mainApp(state):
 
                 default_code = 1001
 
-                cursor.execute("select customer_code from customers")
+                cursor.execute(
+                    "select customer_code from customers order by customer_code desc limit 1")
                 code_tuple_list = cursor.fetchall()
 
                 if code_tuple_list != []:
-                    code_list = []
-                    for code in code_tuple_list:
-                        code_list.append(code[0])
-
-                    last_code = code_list[len(code_list)-1]
+                    last_code = code_tuple_list[0][0]
 
                     new_code = last_code + 1
 
@@ -2803,7 +2819,10 @@ def mainApp(state):
 
                     updateCustomersList(main_customer_sql_query)
                 else:
-                    return
+                    customer_first_name_Entry_customers.delete(0, END)
+                    customer_last_name_Entry_customers.delete(0, END)
+                    customer_address_Entry_customers.delete(0, END)
+                    customer_phone_Entry_customers.delete(0, END)
 
         except Exception as identifier:
             messagebox.showerror(title="Customer Error",
@@ -3170,7 +3189,7 @@ def mainApp(state):
 
         except Exception as identifier:
             messagebox.showerror(title="Products Error",
-                                 message="There is an error to add the product.")
+                                 message="Please insert valid information for the product. If you try to add a product which is already in the list, then please choose a new name.")
             product_name_Entry_products.delete(0, END)
             product_weight_entry_products.delete(0, END)
             product_price_Entry_products.delete(0, END)

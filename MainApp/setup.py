@@ -13,12 +13,11 @@ build_exe_options = {"packages": [
 
 # GUI applications require a different base on Windows (the default is for a
 # console application).
-base = None
-if sys.platform == "win32":
-    base = "Win32GUI"
 
-setup(name="Business monitoring App",
-      version="3.0",
-      description="Manages your business.",
+base = "Win32GUI"
+
+setup(name="Business monitoring App By Shakib",
+      version="4.0",
+      description="This app will monitor your business and generate invoices and excel sheets. This is very useful for small business with limited products.",
       options={"build_exe": build_exe_options},
       executables=[Executable("BMA.py", icon=icon, base=base)])

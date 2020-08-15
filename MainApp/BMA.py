@@ -719,48 +719,109 @@ def mainApp(state):
 
     def stats():
 
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        def yearlyStats(year):
 
-        cursor.execute("select sum(sale_amount), sum(paid_amount) from sales")
-        sales_stats_info = cursor.fetchall()
-        net_sales_sats = 0
-        net_paid_sats = 0
+            yearlyStatsFrame = defaultFrame(
+                statsFrame, f"Stats for particular time - {year}", 0, 1)
 
-        if sales_stats_info[0][0] != None or sales_stats_info[0][1] != None:
-            net_sales_sats = sales_stats_info[0][0]
-            net_paid_sats = sales_stats_info[0][1]
+            def getCostPrice(date):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
 
-        cursor.execute("select sum(amount) from duesPaid")
-        dusePaid_stats_info = cursor.fetchall()
-        net_duesPaid_stats = 0
-        if dusePaid_stats_info[0][0] != None:
-            net_duesPaid_stats = dusePaid_stats_info[0][0]
+                cursor.execute(
+                    f"select round(sum(price)/sum(quantity),2) from stocks GROUP BY product_id")
+                cost_price_tuple_list = cursor.fetchall()
+                print(cost_price_tuple_list)
 
-        total_payment_get_stats = net_paid_sats + net_duesPaid_stats
+                conn.commit()
 
-        total_due_stats = net_sales_sats - total_payment_get_stats
+                cursor.execute(
+                    f"select sum(quantity) from stocks_removed where created_at like '%{year}%' group by product_id")
+                quantity_sold_tuple_list = cursor.fetchall()
 
-        stats_label = Label(statsFrame, text="STATISTICS",
-                            font="verdana 40 bold underline", foreground="green").grid(row=0, column=0, pady=50, columnspan=2)
+                total_cost_price = 0.0
+                if quantity_sold_tuple_list != []:
+                    for i in range(len(cost_price_tuple_list)):
+                        total_cost_price += float(cost_price_tuple_list[i][0]) * float(
+                            quantity_sold_tuple_list[i][0])
 
-        total_sales_stats_entry = defaultEntry(
-            statsFrame, "Total Sales", 1, 0, entryWidth)
-        total_payment_get_stats_entry = defaultEntry(
-            statsFrame, "Total Payment Get", 2, 0, entryWidth)
-        total_due_stats_entry = defaultEntry(
-            statsFrame, "Total Dues", 3, 0, entryWidth)
+                conn.commit()
+                conn.close()
 
-        total_sales_stats_entry.insert(0, net_sales_sats)
-        total_payment_get_stats_entry.insert(0, total_payment_get_stats)
-        total_due_stats_entry.insert(0, total_due_stats)
+                return total_cost_price
 
-        total_sales_stats_entry.config(state="disabled")
-        total_payment_get_stats_entry.config(state="disabled")
-        total_due_stats_entry.config(state="disabled")
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-        conn.commit()
-        conn.close()
+            cursor.execute(
+                f"select sum(sale_amount), sum(paid_amount) from sales where created_at like '%{year}%'")
+            sales_stats_info = cursor.fetchall()
+            net_sales_sats = 0
+            net_paid_sats = 0
+
+            if sales_stats_info[0][0] != None or sales_stats_info[0][1] != None:
+                net_sales_sats = sales_stats_info[0][0]
+                net_paid_sats = sales_stats_info[0][1]
+
+            cursor.execute(
+                f"select sum(amount) from duesPaid where created_at like '%{year}%'")
+            dusePaid_stats_info = cursor.fetchall()
+            net_duesPaid_stats = 0
+            if dusePaid_stats_info[0][0] != None:
+                net_duesPaid_stats = dusePaid_stats_info[0][0]
+
+            total_payment_get_stats = net_paid_sats + net_duesPaid_stats
+
+            total_due_stats = net_sales_sats - total_payment_get_stats
+
+            total_cost_of_sales = getCostPrice(year)
+            gross_profit = net_sales_sats - total_cost_of_sales
+
+            total_sales_stats_entry = defaultEntry(
+                yearlyStatsFrame, "Total Sales", 1, 0, entryWidth)
+            total_payment_get_stats_entry = defaultEntry(
+                yearlyStatsFrame, "Total Payment Got", 5, 0, entryWidth)
+            total_due_stats_entry = defaultEntry(
+                yearlyStatsFrame, "Total Dues", 6, 0, entryWidth)
+            total_cost_price_entry = defaultEntry(
+                yearlyStatsFrame, "Total Cost of sales", 2, 0, entryWidth)
+            total_gross_profit_entry = defaultEntry(
+                yearlyStatsFrame, "Total Gross Profit", 3, 0, entryWidth)
+            separator = ttk.Separator(yearlyStatsFrame, orient=HORIZONTAL)
+            separator.grid(row=4, columnspan=2, sticky="ew", pady=20)
+
+            total_sales_stats_entry.insert(0, net_sales_sats)
+            total_payment_get_stats_entry.insert(0, total_payment_get_stats)
+            total_due_stats_entry.insert(0, total_due_stats)
+            total_cost_price_entry.insert(0, total_cost_of_sales)
+            total_gross_profit_entry.insert(0, gross_profit)
+
+            total_sales_stats_entry.config(state="disabled")
+            total_payment_get_stats_entry.config(state="disabled")
+            total_due_stats_entry.config(state="disabled")
+            total_cost_price_entry.config(state="disabled")
+            total_gross_profit_entry.config(state="disabled")
+
+            conn.commit()
+            conn.close()
+
+        timeZone = pytz.timezone("asia/dhaka")
+        x = datetime.now(timeZone)
+        year = x.now().year
+        yearlyStats(year)
+
+        searchStatsFrame = defaultFrame(
+            statsFrame, "Search by year, month or day", 0, 0)
+
+        searchStatsEntry = defaultEntry(
+            searchStatsFrame, "Date", 0, 0, entryWidth)
+
+        def searchStats():
+            query = searchStatsEntry.get()
+            yearlyStats(query)
+
+        searchStatsButton = defaultButton(
+            searchStatsFrame, "Search", 1, 1, W+E, command=searchStats)
 
     stats()
 

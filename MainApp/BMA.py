@@ -22,8 +22,8 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Monitoring App")
-    right = root.winfo_screenwidth()  # 1280  #
-    down = root.winfo_screenheight()  # 720  #
+    right = 1200  # root.winfo_screenwidth()  # 1280  #
+    down = 700  # root.winfo_screenheight()  # 720  #
     # root.geometry(f"{right}x{down}")
     # root.geometry(f"{right}x{down}")
 
@@ -155,7 +155,8 @@ def mainApp(state):
                                 height=down, pady=50, padx=(right * 0.105))
     productDetailsFrame.pack(fill="both", expand=1)
 
-    aboutFrame = Frame(notebook, width=right, height=down, pady=30, padx=30)
+    aboutFrame = Frame(notebook, width=right, height=down,
+                       pady=(down * 0.15), padx=(right * 0.02))
     aboutFrame.pack(fill="both", expand=1)
 
     notebook.add(homeFrame, text="Billing")
@@ -3296,38 +3297,38 @@ def mainApp(state):
             aboutFrame, "Details about this software", 0, 0)
 
         about_details_textField = Text(
-            detailsFrame_about, height=9, relief=FLAT, bg="#F0F0F0", font="verdana 11")
+            detailsFrame_about, height=12, width=68, relief=FLAT, bg="#F0F0F0", font=f"verdana {fontSize}")
         about_details_textField.grid(row=0, column=0, padx=20, pady=20)
 
-        details = "This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you."
+        details = "This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you.\n\nCurrently this software is owned by Biocin Bangladesh Company. \nIt cannot be used for any other companies or personal use."
         about_details_textField.insert("end", details)
         about_details_textField.config(state=DISABLED)
 
         authorFrame = defaultFrame(
-            aboutFrame, "About author", 1, 0)
+            aboutFrame, "About author", 0, 1)
 
         def callback(url):
             webbrowser.open_new(url)
 
         detailsLabel = Label(
-            authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font="verdana 11")
+            authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font=f"verdana {fontSize}")
         detailsLabel.pack()
 
         github = Label(authorFrame, text="Github",
                        fg="#e4324c", cursor="hand2")
-        github.pack(side=LEFT, expand=YES, anchor="e", pady=10)
+        github.pack(side=LEFT, expand=YES, anchor="ne",)
         github.bind(
             "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
 
         website = Label(authorFrame, text="Portfolio",
                         fg="#e4324c", cursor="hand2")
-        website.pack(side=LEFT)
+        website.pack(side=LEFT, anchor="n")
         website.bind(
             "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
 
         facebook = Label(authorFrame, text="Facebook",
                          fg="#e4324c", cursor="hand2")
-        facebook.pack(side=LEFT, expand=YES, anchor="w")
+        facebook.pack(side=LEFT, expand=YES, anchor="nw")
         facebook.bind(
             "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
 

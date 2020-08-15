@@ -22,8 +22,8 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Management")
-    right = root.winfo_screenwidth()  # 1280  #
-    down = root.winfo_screenheight()  # 720  #
+    right = 1368  # root.winfo_screenwidth()  # 1280  #
+    down = 768  # root.winfo_screenheight()  # 720  #
     # root.geometry(f"{right}x{down}")
     # root.geometry(f"{right}x{down}")
 
@@ -897,8 +897,9 @@ def mainApp(state):
     """
 
     DueList_frame = defaultFrame(dueFrame, "Paying Dues List", 0, 1, rowspan=2)
+    main_dues_sql_query = "select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc"
 
-    def updateDueList():
+    def updateDueList(sql_query):
         trv_dues = ttk.Treeview(DueList_frame, columns=(
             1, 2, 3, 4, 5), show="headings", height=int(0.02000*float(down)), padding=5, style="Custom.Treeview")
         trv_dues.grid(row=0, column=0, columnspan=2)
@@ -924,7 +925,7 @@ def mainApp(state):
 
         cursor = conn.cursor()
 
-        cursor.execute("select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc")
+        cursor.execute(sql_query)
         dues_tuple_list = cursor.fetchall()
 
         for i in dues_tuple_list:
@@ -1098,7 +1099,7 @@ def mainApp(state):
 
                     generate_due_invoice_button = defaultButton(
                         payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
-                    updateDueList()
+                    updateDueList(main_dues_sql_query)
                     stats()
 
                 else:
@@ -1106,6 +1107,7 @@ def mainApp(state):
             except Exception as identifier:
                 messagebox.showerror(title="Customer Error",
                                      message="Please enter valid Information.")
+                print(identifier)
 
         customer_due_pay_amount_save_button = defaultButton(
             payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
@@ -1115,68 +1117,25 @@ def mainApp(state):
     DueSearch_frame = defaultFrame(
         dueFrame, "Search by code, name, phone or date", 1, 0)
 
+    searchDues_dues_entry = defaultEntry(
+        DueSearch_frame, "Search", 0, 0, entryWidth)
+
     def SearchDues_frame():
+        query = searchDues_dues_entry.get()
+        dues_search_sql_query = f"select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID where customers.customer_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or duesPaid.created_at like '%{query}%' order by duesPaid.ID desc"
+        updateDueList(dues_search_sql_query)
 
-        searchDues_dues_entry = defaultEntry(
-            DueSearch_frame, "Search", 0, 0, entryWidth)
+    searchDues_dues_button = defaultButton(
+        DueSearch_frame, "Search", 1, 1, W+E, command=SearchDues_frame)
 
-        def updateSearchDues_list():
+    def resetDuesList_dues():
+        updateDueList(main_dues_sql_query)
 
-            trv_dues = ttk.Treeview(DueList_frame, columns=(
-                1, 2, 3, 4, 5), show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
-            trv_dues.grid(row=0, column=0, columnspan=2)
-
-            trv_dues.heading(1, text='Code')
-            trv_dues.heading(2, text='Name')
-            trv_dues.heading(3, text='Phone')
-            trv_dues.heading(4, text='Due Amount')
-            trv_dues.heading(5, text='Date')
-
-            trv_dues.column(1, anchor=CENTER,
-                            width=int(0.0700*float(right)))
-            trv_dues.column(2, anchor=CENTER,
-                            width=int(0.1000*float(right)))
-            trv_dues.column(3, anchor=CENTER,
-                            width=int(0.1000*float(right)))
-            trv_dues.column(4, anchor=CENTER,
-                            width=int(0.0700*float(right)))
-            trv_dues.column(5, anchor=CENTER,
-                            width=int(0.1300*float(right)))
-
-            query = searchDues_dues_entry.get()
-
-            conn = sqlite3.connect(db_path)
-
-            cursor = conn.cursor()
-
-            cursor.execute(
-                f"select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID where customers.customer_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or duesPaid.created_at like '%{query}%' order by duesPaid.ID desc")
-            dues_tuple_list = cursor.fetchall()
-
-            for i in dues_tuple_list:
-                trv_dues.insert("", "end", values=i)
-
-            trv_total_entry = defaultEntry(
-                DueList_frame, "Total items in the list", 1, 0, entryWidth)
-            trv_total_entry.insert(0, f"{len(dues_tuple_list)}")
-            trv_total_entry.config(state="disabled")
-
-            conn.commit()
-
-            conn.close()
-
-        searchDues_dues_button = defaultButton(
-            DueSearch_frame, "Search", 1, 1, W+E, command=updateSearchDues_list)
-
-        def resetDuesList_dues():
-            updateDueList()
-
-        resetDuesListButton_dues = defaultButton(
-            DueSearch_frame, "Reset", 1, 0, W+E, command=resetDuesList_dues)
+    resetDuesListButton_dues = defaultButton(
+        DueSearch_frame, "Reset", 1, 0, W+E, command=resetDuesList_dues)
 
     payDue_dues()
-    updateDueList()
-    SearchDues_frame()
+    updateDueList(main_dues_sql_query)
 
     """
 
@@ -1187,8 +1146,9 @@ def mainApp(state):
     """
 
     SalesList_Frame_sales = defaultFrame(saleFrame, "Sales List", 0, 0)
+    main_sql_sales_list_query = "select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID order by sales.created_at desc"
 
-    def UpdateSalesList_sales():
+    def UpdateSalesList_sales(sql_query):
 
         trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
                                  show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
@@ -1221,7 +1181,7 @@ def mainApp(state):
 
         cursor = conn.cursor()
 
-        cursor.execute("select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID order by sales.created_at desc")
+        cursor.execute(sql_query)
         sales_tuple_list = cursor.fetchall()
 
         for i in sales_tuple_list:
@@ -1350,193 +1310,27 @@ def mainApp(state):
         salesInformationButton = defaultButton(
             SalesList_Frame_sales, "Details of selected Sales", 2, 3, W+E, command=getSalesInformationSelected)
 
-    # SalesSearch_Frame_sales = defaultFrame(
-        # saleFrame, "Search by Customer's Name, Phone number, Invoice Number or Date", 1, 0)
+    searchSales_Entry_sales = ttk.Entry(SalesList_Frame_sales, width=entryWidth, justify=RIGHT,
+                                        font=f"Courier {fontSize} bold")
+    searchSales_Entry_sales.grid(
+        row=1, column=0, pady=5, sticky=W+E, columnspan=2)
 
     def salesSearch_sales():
+        query = searchSales_Entry_sales.get()
+        sales_search_sql_query = f"select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID where sales.sale_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or sales.created_at like '%{query}%' order by sales.created_at desc"
+        UpdateSalesList_sales(sales_search_sql_query)
 
-        searchSales_Entry_sales = ttk.Entry(SalesList_Frame_sales, width=entryWidth, justify=RIGHT,
-                                            font=f"Courier {fontSize} bold")
-        searchSales_Entry_sales.grid(
-            row=1, column=0, pady=5, sticky=W+E, columnspan=2)
+    searchSales_Button_sales = defaultButton(
+        SalesList_Frame_sales, "Search", 2, 1, W+E, command=salesSearch_sales)
 
-        def searchSales_List_sales():
+    def resetSales_List_sales():
+        UpdateSalesList_sales(main_sql_sales_list_query)
 
-            trv_sales = ttk.Treeview(SalesList_Frame_sales, columns=(1, 2, 3, 4, 5, 6, 7),
-                                     show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
-            trv_sales.grid(row=0, column=0, columnspan=4)
+    resetSales_Button_sales = defaultButton(
+        SalesList_Frame_sales, "Reset", 2, 0, W+E, command=resetSales_List_sales)
 
-            trv_sales.heading(1, text='Invoice Number')
-            trv_sales.heading(2, text='Customer Name')
-            trv_sales.heading(3, text='Customer Phone')
-            trv_sales.heading(4, text='Net Amount')
-            trv_sales.heading(5, text='Paid Amount')
-            trv_sales.heading(6, text='Due Amount')
-            trv_sales.heading(7, text='Date Added')
+    UpdateSalesList_sales(main_sql_sales_list_query)
 
-            trv_sales.column(1, anchor=CENTER,
-                             width=int(0.1000*float(right)))
-            trv_sales.column(2, anchor=CENTER,
-                             width=int(0.1250*float(right)))
-            trv_sales.column(3, anchor=CENTER,
-                             width=int(0.1500*float(right)))
-            trv_sales.column(4, anchor=CENTER,
-                             width=int(0.1000*float(right)))
-            trv_sales.column(5, anchor=CENTER,
-                             width=int(0.1000*float(right)))
-            trv_sales.column(6, anchor=CENTER,
-                             width=int(0.1000*float(right)))
-            trv_sales.column(7, anchor=CENTER,
-                             width=int(0.1500*float(right)))
-
-            conn = sqlite3.connect(db_path)
-
-            cursor = conn.cursor()
-
-            query = searchSales_Entry_sales.get()
-
-            cursor.execute(
-                f"select sales.sale_code, customers.first_name, customers.phone, sales.sale_amount, sales.paid_amount, sales.due_amount, sales.created_at from sales inner join customers on sales.customer_id = customers.ID where sales.sale_code like '%{query}%' or customers.first_name like '%{query}%' or customers.phone like '%{query}%' or sales.created_at like '%{query}%' order by sales.created_at desc")
-            sales_tuple_list = cursor.fetchall()
-
-            for i in sales_tuple_list:
-                trv_sales.insert("", "end", values=i)
-
-            trv_total_entry = defaultEntry(
-                SalesList_Frame_sales, "Total items in the list", 1, 2, entryWidth)
-            trv_total_entry.insert(0, f"{len(sales_tuple_list)}")
-            trv_total_entry.config(state="disabled")
-
-            def print_sales():
-                print_as_excel(sales_tuple_list)
-
-            print_sales_info_button = defaultButton(
-                SalesList_Frame_sales, "Generate Excel List", 2, 2, W+E, command=print_sales)
-
-            conn.commit()
-
-            conn.close()
-
-            def getSalesInformationSelected():
-                try:
-                    selectedSalesIID = trv_sales.selection()[0]
-                    salesCode = trv_sales.item(selectedSalesIID)["values"][0]
-                    customer_name_selected = trv_sales.item(
-                        selectedSalesIID)["values"][1]
-                    customer_phone_selected = trv_sales.item(selectedSalesIID)[
-                        "values"][2]
-                    net_total_selected = trv_sales.item(
-                        selectedSalesIID)["values"][3]
-                    paid_total_selected = trv_sales.item(
-                        selectedSalesIID)["values"][4]
-                    due_total_selected = trv_sales.item(
-                        selectedSalesIID)["values"][5]
-
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        f"select products.product,products.weight, products.price, stocks_removed.quantity, (products.price * stocks_removed.quantity)  from stocks_removed join products on stocks_removed.product_id=products.ID where stocks_removed.sale_code={salesCode}")
-                    sales_product_information = cursor.fetchall()
-
-                    total_sales_without_discounts = 0.0
-                    for i in sales_product_information:
-                        total_sales_without_discounts += float(i[4])
-
-                    discount_selected = ((total_sales_without_discounts -
-                                          float(net_total_selected)) / total_sales_without_discounts) * 100.0
-
-                    conn.commit()
-                    conn.close()
-
-                    salesDetails_window = Tk()
-                    salesDetails_window.title(f"{salesCode} Information")
-                    salesDetails_window.iconbitmap(icon_path)
-
-                    salesInformationFrame = defaultFrame(
-                        salesDetails_window, "Sales Information", 0, 0)
-
-                    scEntry = defaultEntry(salesInformationFrame,
-                                           "Sales Code", 0, 0, entryWidth)
-                    cnEntry = defaultEntry(salesInformationFrame,
-                                           "Customer Name", 1, 0, entryWidth)
-                    cpEntry = defaultEntry(salesInformationFrame,
-                                           "Customer Phone", 2, 0, entryWidth)
-                    tsEntry = defaultEntry(salesInformationFrame,
-                                           "Total Sales", 4, 0, entryWidth)
-                    dcEntry = defaultEntry(salesInformationFrame,
-                                           "Discount", 5, 0, entryWidth)
-                    ntEntry = defaultEntry(salesInformationFrame,
-                                           "Net Total Sales", 6, 0, entryWidth)
-                    paEntry = defaultEntry(salesInformationFrame,
-                                           "Paid amount", 7, 0, entryWidth)
-
-                    duEntry = defaultEntry(salesInformationFrame,
-                                           "Due Total", 8, 0, entryWidth)
-
-                    trv_sales_selected = ttk.Treeview(salesInformationFrame, columns=(1, 2, 3, 4, 5),
-                                                      show="headings", height=int(0.00600*float(down)), padding=5, style="Custom.Treeview")
-                    trv_sales_selected.grid(
-                        row=3, column=0, columnspan=2, pady=10)
-
-                    trv_sales_selected.heading(1, text='Product')
-                    trv_sales_selected.heading(2, text='Weight')
-                    trv_sales_selected.heading(3, text='Price')
-                    trv_sales_selected.heading(4, text='Quantity')
-                    trv_sales_selected.heading(5, text='Total Cost')
-
-                    trv_sales_selected.column(1, anchor=CENTER,
-                                              width=100)
-                    trv_sales_selected.column(2, anchor=CENTER,
-                                              width=80)
-                    trv_sales_selected.column(3, anchor=CENTER,
-                                              width=90)
-                    trv_sales_selected.column(4, anchor=CENTER,
-                                              width=80)
-                    trv_sales_selected.column(5, anchor=CENTER,
-                                              width=100)
-
-                    for i in sales_product_information:
-                        trv_sales_selected.insert("", "end", values=i)
-
-                    scEntry.insert(0, salesCode)
-                    cnEntry.insert(0, customer_name_selected)
-                    cpEntry.insert(0, customer_phone_selected)
-                    tsEntry.insert(0, total_sales_without_discounts)
-                    dcEntry.insert(0, str(discount_selected) + "%")
-                    ntEntry.insert(0, net_total_selected)
-                    paEntry.insert(0, paid_total_selected)
-                    duEntry.insert(0, due_total_selected)
-
-                    scEntry.config(state="disabled")
-                    cnEntry.config(state="disabled")
-                    cpEntry.config(state="disabled")
-                    tsEntry.config(state="disabled")
-                    dcEntry.config(state="disabled")
-                    ntEntry.config(state="disabled")
-                    paEntry.config(state="disabled")
-                    duEntry.config(state="disabled")
-
-                    salesDetails_window.mainloop()
-
-                except Exception as identifier:
-                    messagebox.showerror(
-                        title="Selection Error", message="You didn't select any sales from the list.")
-
-            salesInformationButton = defaultButton(
-                SalesList_Frame_sales, "Details of selected Sales", 2, 3, W+E, command=getSalesInformationSelected)
-
-        searchSales_Button_sales = defaultButton(
-            SalesList_Frame_sales, "Search", 2, 1, W+E, command=searchSales_List_sales)
-
-        def resetSales_List_sales():
-            UpdateSalesList_sales()
-
-        resetSales_Button_sales = defaultButton(
-            SalesList_Frame_sales, "Reset", 2, 0, W+E, command=resetSales_List_sales)
-
-    UpdateSalesList_sales()
-    salesSearch_sales()
     """
 
 
@@ -2124,8 +1918,10 @@ def mainApp(state):
                                                     conn.commit()
 
                                                     conn.close()
-                                                    UpdateSalesList_sales()
-                                                    updateDueList()
+                                                    UpdateSalesList_sales(
+                                                        main_sql_sales_list_query)
+                                                    updateDueList(
+                                                        main_dues_sql_query)
                                                     updateProductsDetails()
                                                     stats()
                                                     messagebox.showinfo(
@@ -2373,7 +2169,9 @@ def mainApp(state):
     stockList_frame_stocks = defaultFrame(
         stockFrame, "List of stocks", 0, 1, rowspan=2)
 
-    def updateStockList_stocks():
+    main_stock_sql_query = "select stocks.ID, products.product, stocks.Quantity, stocks.Price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products where stocks.product_id=products.ID order by stocks.created_at desc"
+
+    def updateStockList_stocks(sql_query):
 
         trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5, 6),
                                   show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
@@ -2396,8 +2194,7 @@ def mainApp(state):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            "select stocks.ID, products.product, stocks.Quantity, stocks.Price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products where stocks.product_id=products.ID order by stocks.created_at desc")
+        cursor.execute(sql_query)
         stocks_tuple_list = cursor.fetchall()
 
         for i in stocks_tuple_list:
@@ -2427,7 +2224,7 @@ def mainApp(state):
                     conn.commit()
                     conn.close()
                     trv_stocks.delete(*trv_stocks.get_children())
-                    updateStockList_stocks()
+                    updateStockList_stocks(main_stock_sql_query)
                     UpdateHomeAddProduct_Frame()
                     updateProductsDetails()
                     stats()
@@ -2439,7 +2236,7 @@ def mainApp(state):
                     title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
 
                 trv_stocks.delete(*trv_stocks.get_children())
-                updateStockList_stocks()
+                updateStockList_stocks(main_stock_sql_query)
                 UpdateHomeAddProduct_Frame()
 
         deleteStockfromstocklist = defaultButton(
@@ -2502,7 +2299,7 @@ def mainApp(state):
                         messagebox.showinfo(
                             title="Edit stock successfully", message="Stock is updated successfully.")
                         trv_stocks.delete(*trv_stocks.get_children())
-                        updateStockList_stocks()
+                        updateStockList_stocks(main_stock_sql_query)
                         UpdateHomeAddProduct_Frame()
                         updateProductsDetails()
                         stats()
@@ -2523,7 +2320,7 @@ def mainApp(state):
         editStockfromStockList = defaultButton(
             stockList_frame_stocks, "Edit selected Stock", 1, 1, W+E, command=editstockfromstocklist)
 
-    updateStockList_stocks()
+    updateStockList_stocks(main_stock_sql_query)
 
     def getAllProducts():
         conn = sqlite3.connect(db_path)
@@ -2577,7 +2374,7 @@ def mainApp(state):
                     if resposne == True:
                         conn.commit()
                         conn.close()
-                        updateStockList_stocks()
+                        updateStockList_stocks(main_stock_sql_query)
                         updateProductsDetails()
                         stats()
                         productNameEntry_stocks.delete(0, END)
@@ -2622,167 +2419,22 @@ def mainApp(state):
 
     updateStockAdd()
 
-    def searchStocks_stocks():
-
-        trv_stocks = ttk.Treeview(stockList_frame_stocks, columns=(1, 2, 3, 4, 5, 6),
-                                  show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
-        trv_stocks.grid(row=0, column=0, columnspan=2)
-
-        trv_stocks.heading(1, text="stock ID")
-        trv_stocks.heading(2, text='Product Name')
-        trv_stocks.heading(3, text='Quantity')
-        trv_stocks.heading(4, text='Price')
-        trv_stocks.heading(5, text='Price Per Product')
-        trv_stocks.heading(6, text='Added Date')
-
-        trv_stocks.column(1, anchor=CENTER, width=int(0.050*float(right)))
-        trv_stocks.column(2, anchor=CENTER, width=int(0.100*float(right)))
-        trv_stocks.column(3, anchor=CENTER, width=int(0.070*float(right)))
-        trv_stocks.column(4, anchor=CENTER, width=int(0.100*float(right)))
-        trv_stocks.column(5, anchor=CENTER, width=int(0.100*float(right)))
-        trv_stocks.column(6, anchor=CENTER, width=int(0.120*float(right)))
-
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        query = searchStocksEntry_stocks.get()
-
-        cursor.execute(
-            f"select stocks.ID, products.product, stocks.Quantity, stocks.price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products on stocks.product_id=products.ID where products.product like '%{query}%' or stocks.created_at like '%{query}%' order by stocks.created_at desc")
-        stocks_tuple_list = cursor.fetchall()
-
-        for i in stocks_tuple_list:
-            trv_stocks.insert("", "end", values=i)
-        trv_total_entry = defaultEntry(
-            stockList_frame_stocks, "Total items in the list", 2, 0, entryWidth)
-        trv_total_entry.insert(0, f"{len(stocks_tuple_list)}")
-        trv_total_entry.config(state="disabled")
-
-        conn.commit()
-        conn.close()
-
-        def deleteStockfromstocklist():
-            try:
-                selectedStockIID = trv_stocks.selection()[0]
-                stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"DELETE FROM stocks WHERE ID={int(stock_ID)}")
-
-                resposne = messagebox.askyesno(
-                    title="Confirm delete stock", message="Are you sure you want to delete this stock?")
-                if resposne == True:
-                    conn.commit()
-                    conn.close()
-                    trv_stocks.delete(*trv_stocks.get_children())
-                    updateStockList_stocks()
-                    UpdateHomeAddProduct_Frame()
-                    updateProductsDetails()
-                    stats()
-                else:
-                    return
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
-
-                trv_stocks.delete(*trv_stocks.get_children())
-                updateStockList_stocks()
-                UpdateHomeAddProduct_Frame()
-
-        deleteStockfromstocklist = defaultButton(
-            stockList_frame_stocks, "Delete selected stock", 1, 0, W+E, command=deleteStockfromstocklist)
-
-        def editstockfromstocklist():
-            try:
-                selectedStockIID = trv_stocks.selection()[0]
-                stock_ID = trv_stocks.item(selectedStockIID)["values"][0]
-                stock_name = trv_stocks.item(selectedStockIID)["values"][1]
-
-                editWindow = Tk()
-                editWindow.title("Edit Stock")
-                editWindow.iconbitmap(icon_path)
-
-                editStockFrame = defaultFrame(
-                    editWindow, "Edit Stock", 0, 0)
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select Quantity, Price from stocks WHERE ID={int(stock_ID)}")
-                stock_info_tuple_list = cursor.fetchall()
-
-                name_edit_stocks = defaultEntry(
-                    editStockFrame, "Name", 0, 0, 30)
-                quantity_edit_stocks = defaultEntry(
-                    editStockFrame, "Quantity", 1, 0, 30)
-                price_edit_stocks = defaultEntry(
-                    editStockFrame, "Price", 2, 0, 30)
-
-                name_edit_stocks.insert(0, stock_name)
-                quantity_edit_stocks.insert(0, stock_info_tuple_list[0][0])
-                price_edit_stocks.insert(0, stock_info_tuple_list[0][1])
-
-                name_edit_stocks.config(state="disabled")
-
-                def editAndSaveStock():
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-
-                    price_per_product = float(
-                        price_edit_stocks.get()) / float(quantity_edit_stocks.get())
-
-                    cursor.execute(
-                        f"update stocks set Quantity={int(quantity_edit_stocks.get())} where ID={int(stock_ID)}")
-                    cursor.execute(
-                        f"update stocks set Price={float(price_edit_stocks.get())} where ID={int(stock_ID)}")
-
-                    cursor.execute(
-                        f"update stocks set price_per_product={price_per_product} where ID={int(stock_ID)}")
-
-                    resposne = messagebox.askyesno(
-                        title="Confirm Edit", message="Are you sure you want to edit this stock's information?")
-                    if resposne == True:
-                        conn.commit()
-                        conn.close()
-
-                        messagebox.showinfo(
-                            title="Edit stock successfully", message="Stock is updated successfully.")
-                        updateStockList_stocks()
-                        updateProductsDetails()
-                        stats()
-                        editWindow.destroy()
-
-                    else:
-                        return
-
-                save_edit_button = defaultButton(
-                    editStockFrame, "Save Changes", 4, 1, W+E, command=editAndSaveStock)
-
-                editWindow.mainloop()
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You did not select a stock from the list.")
-
-        editStockfromStockList = defaultButton(
-            stockList_frame_stocks, "Edit selected Stock", 1, 1, W+E, command=editstockfromstocklist)
-
     stockSearch_frame_stocks = defaultFrame(
         stockFrame, "Search by product name", 1, 0)
 
     searchStocksEntry_stocks = defaultEntry(
         stockSearch_frame_stocks, "Search Stock", 0, 0, entryWidth)
 
+    def searchStocks_stocks():
+        query = searchStocksEntry_stocks.get()
+        search_stock_sql_query = f"select stocks.ID, products.product, stocks.Quantity, stocks.price, round(stocks.price_per_product, 2), stocks.created_at from stocks inner join products on stocks.product_id=products.ID where products.product like '%{query}%' or stocks.created_at like '%{query}%' order by stocks.created_at desc"
+        updateStockList_stocks(search_stock_sql_query)
+
     searchStocksButton_stocks = defaultButton(
         stockSearch_frame_stocks, "Search Stock", 1, 1, W+E, command=searchStocks_stocks)
 
     def resetStocks_stocks():
-        updateStockList_stocks()
+        updateStockList_stocks(main_stock_sql_query)
 
     resetStocksButton_stocks = defaultButton(
         stockSearch_frame_stocks, "Reset Stock", 1, 0, W+E, command=resetStocks_stocks)
@@ -2806,8 +2458,9 @@ def mainApp(state):
 
     customerListFrame_customers = defaultFrame(
         customerFrame, "Customer List", 0, 1, rowspan=2)
+    main_customer_sql_query = "select customer_code, first_name, last_name, address, phone from customers order by ID desc"
 
-    def updateCustomersList():
+    def updateCustomersList(sql_query):
 
         trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
                                      show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
@@ -2828,8 +2481,7 @@ def mainApp(state):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            "select customer_code, first_name, last_name, address, phone from customers order by ID desc")
+        cursor.execute(sql_query)
         customers_tuple_list = cursor.fetchall()
 
         for i in customers_tuple_list:
@@ -2864,7 +2516,9 @@ def mainApp(state):
                     conn.commit()
                     conn.close()
                     trv_customers.delete(*trv_customers.get_children())
-                    updateCustomersList()
+                    updateCustomersList(main_customer_sql_query)
+                    UpdateSalesList_sales(main_sql_sales_list_query)
+                    updateDueList(main_dues_sql_query)
                 else:
                     return
 
@@ -2873,7 +2527,7 @@ def mainApp(state):
                     title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
 
                 trv_customers.delete(*trv_customers.get_children())
-                updateCustomersList()
+                updateCustomersList(main_customer_sql_query)
 
         deleteCustomerFromCustomerListButton = defaultButton(
             customerListFrame_customers, "Delete selected Customer", 1, 0, W+E, command=deleteCustomerFromCustomerList)
@@ -2931,7 +2585,9 @@ def mainApp(state):
 
                         messagebox.showinfo(
                             title="Edit Customer successfully", message="Customer is updated successfully.")
-                        updateCustomersList()
+                        updateCustomersList(main_customer_sql_query)
+                        UpdateSalesList_sales(main_sql_sales_list_query)
+                        updateDueList(main_dues_sql_query)
                         editWindow.destroy()
 
                     else:
@@ -3062,7 +2718,7 @@ def mainApp(state):
                     title="Selection error", message="You didn't select a customer from the list.")
 
                 trv_customers.delete(*trv_customers.get_children())
-                updateCustomersList()
+                updateCustomersList(main_customer_sql_query)
 
         detailsCustomersFromCustomersList = defaultButton(
             customerListFrame_customers, "Details", 1, 2, W+E, command=detailsCustomerFromCustomersList)
@@ -3145,7 +2801,7 @@ def mainApp(state):
                     customer_address_Entry_customers.delete(0, END)
                     customer_phone_Entry_customers.delete(0, END)
 
-                    updateCustomersList()
+                    updateCustomersList(main_customer_sql_query)
                 else:
                     return
 
@@ -3158,7 +2814,7 @@ def mainApp(state):
 
     #------------------------ Showing Customer list Frame --------------------------------#
 
-    updateCustomersList()
+    updateCustomersList(main_customer_sql_query)
 
     #------------------------ Search Customer Frame --------------------------------#
 
@@ -3170,270 +2826,14 @@ def mainApp(state):
 
     def searchCustomer():
         query = searchCustomerEntry_customers.get()
-
-        trv_customers = ttk.Treeview(customerListFrame_customers, columns=(1, 2, 3, 4, 5),
-                                     show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
-        trv_customers.grid(row=0, column=0, columnspan=3)
-
-        trv_customers.heading(1, text='Code')
-        trv_customers.heading(2, text='First Name')
-        trv_customers.heading(3, text='Last Name')
-        trv_customers.heading(4, text='Address')
-        trv_customers.heading(5, text='Phone')
-
-        trv_customers.column(1, anchor=CENTER, width=int(0.100*float(right)))
-        trv_customers.column(2, anchor=CENTER, width=int(0.100*float(right)))
-        trv_customers.column(3, anchor=CENTER, width=int(0.100*float(right)))
-        trv_customers.column(4, anchor=CENTER, width=int(0.100*float(right)))
-        trv_customers.column(5, anchor=CENTER, width=int(0.100*float(right)))
-
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            f"select customer_code, first_name, last_name, address, phone from customers where first_name like '%{query}%' or last_name like '%{query}%' or address like '%{query}%' or phone like '%{query}%' order by ID desc")
-        customers_tuple_list = cursor.fetchall()
-
-        for i in customers_tuple_list:
-            trv_customers.insert("", "end", values=i)
-        trv_total_entry = defaultEntry(
-            customerListFrame_customers, "Total items in the list", 2, 1, entryWidth)
-        trv_total_entry.insert(0, f"{len(customers_tuple_list)}")
-        trv_total_entry.config(state="disabled")
-
-        def print_customers():
-            print_as_excel(customers_tuple_list)
-
-        print_customer_info_button = defaultButton(
-            customerListFrame_customers, "Generate Excel List", 2, 0, W+E, command=print_customers)
-        conn.commit()
-        conn.close()
-
-        def deleteCustomerFromCustomerList():
-            try:
-                selectedCustomerIID = trv_customers.selection()[0]
-                code = trv_customers.item(selectedCustomerIID)["values"][0]
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"DELETE FROM customers WHERE customer_code={int(code)}")
-
-                resposne = messagebox.askyesno(
-                    title="Confirm delete customer", message="Are you sure you want to delete this customer?")
-                if resposne == True:
-                    conn.commit()
-                    conn.close()
-                    trv_customers.delete(*trv_customers.get_children())
-                    updateCustomersList()
-                else:
-                    return
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You didn't select a customer from the list. Please select one and try to delete.")
-
-                trv_customers.delete(*trv_customers.get_children())
-                updateCustomersList()
-
-        deleteCustomerFromCustomerListButton = defaultButton(
-            customerListFrame_customers, "Delete selected Customer", 1, 0, W+E, command=deleteCustomerFromCustomerList)
-
-        def editCustomerFromCustomerList():
-            try:
-                selectedCustomerIID = trv_customers.selection()[0]
-                code = trv_customers.item(selectedCustomerIID)["values"][0]
-
-                editWindow = Tk()
-                editWindow.title("Edit Customer")
-                editWindow.iconbitmap(icon_path)
-
-                editCustomerFrame = defaultFrame(
-                    editWindow, "Edit Customer", 0, 0)
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select first_name, last_name, address, phone from customers WHERE customer_code={int(code)}")
-                customer_info_tuple_list = cursor.fetchall()
-
-                f_name_edit = defaultEntry(
-                    editCustomerFrame, "First Name", 0, 0, 30)
-                l_name_edit = defaultEntry(
-                    editCustomerFrame, "Last Name", 1, 0, 30)
-                address_edit = defaultEntry(
-                    editCustomerFrame, "Address", 2, 0, 30)
-                phone_edit = defaultEntry(editCustomerFrame, "Phone", 3, 0, 30)
-
-                f_name_edit.insert(0, customer_info_tuple_list[0][0])
-                l_name_edit.insert(0, customer_info_tuple_list[0][1])
-                address_edit.insert(0, customer_info_tuple_list[0][2])
-                phone_edit.insert(0, customer_info_tuple_list[0][3])
-
-                def editAndSaveCustomer():
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        f"update customers set first_name='{f_name_edit.get().capitalize()}' where customer_code={int(code)}")
-                    cursor.execute(
-                        f"update customers set last_name='{l_name_edit.get().capitalize()}' where customer_code={int(code)}")
-                    cursor.execute(
-                        f"update customers set address='{address_edit.get().capitalize()}' where customer_code={int(code)}")
-                    cursor.execute(
-                        f"update customers set phone='{phone_edit.get()}' where customer_code={int(code)}")
-
-                    resposne = messagebox.askyesno(
-                        title="Confirm Edit", message="Are you sure you want to edit this customer's information?")
-                    if resposne == True:
-                        conn.commit()
-                        conn.close()
-
-                        messagebox.showinfo(
-                            title="Edit Customer successfully", message="Customer is updated successfully.")
-                        updateCustomersList()
-                        editWindow.destroy()
-
-                    else:
-                        return
-
-                save_edit_button = defaultButton(
-                    editCustomerFrame, "Save Changes", 4, 1, W+E, command=editAndSaveCustomer)
-
-                editWindow.mainloop()
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You did not select a customer from the list.")
-
-        editCustomerFromCustomerListButton = defaultButton(
-            customerListFrame_customers, "Edit selected Customer", 1, 1, W+E, command=editCustomerFromCustomerList)
-
-        def detailsCustomerFromCustomersList():
-
-            try:
-
-                selectedProductIID = trv_customers.selection()[0]
-                code = trv_customers.item(selectedProductIID)["values"][0]
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select * from customers where customer_code='{code}'")
-                customer_info_selected = cursor.fetchall()
-                customer_ID_selected = customer_info_selected[0][0]
-                customer_name_selected = f"{customer_info_selected[0][2]} {customer_info_selected[0][3]}"
-                customer_address_selected = customer_info_selected[0][4]
-                customer_phone_selected = customer_info_selected[0][5]
-
-                conn.commit()
-
-                cursor.execute(
-                    f"select sum(sale_amount), sum(paid_amount), sum(due_amount) from sales where customer_id={int(customer_ID_selected)}")
-                customer_sales_info_selected = cursor.fetchall()
-
-                customer_total_sales_selected = 0
-                customer_total_paid_selected = 0
-                customer_total_due_selected = 0
-
-                if customer_sales_info_selected[0][0] != None and customer_sales_info_selected[0][1] != None and customer_sales_info_selected[0][1] != None:
-                    customer_total_sales_selected = customer_sales_info_selected[0][0]
-                    customer_total_paid_selected = customer_sales_info_selected[0][1]
-                    customer_total_due_selected = customer_sales_info_selected[0][2]
-
-                conn.commit()
-
-                cursor.execute(
-                    f"select sum(amount) from duesPaid where customer_id={int(customer_ID_selected)}")
-                customer_due_paid_info_selected = cursor.fetchall()
-
-                customer_total_due_paid_selected = 0
-                if customer_due_paid_info_selected[0][0] != None:
-                    customer_total_due_paid_selected = customer_due_paid_info_selected[
-                        0][0]
-
-                customer_total_additional_due = customer_total_due_selected - \
-                    customer_total_due_paid_selected
-
-                conn.commit()
-                conn.close()
-
-                details_window = Tk()
-                details_window.title(f"{customer_name_selected} Details.")
-                details_window.iconbitmap(icon_path)
-
-                details_frame_customer = defaultFrame(
-                    details_window, "Customer Details", 0, 0)
-
-                customer_code_selected_entry = defaultEntry(
-                    details_frame_customer, "Customer Code", 0, 1, entryWidth)
-                customer_name_selected_entry = defaultEntry(
-                    details_frame_customer, "Name", 1, 1, entryWidth)
-                customer_address_selected_entry = defaultEntry(
-                    details_frame_customer, "Address", 2, 1, entryWidth)
-                customer_phone_selected_entry = defaultEntry(
-                    details_frame_customer, "Phone", 3, 1, entryWidth)
-                customer_total_sales_selected_entry = defaultEntry(
-                    details_frame_customer, "Total Sales", 4, 1, entryWidth)
-                customer_total_paid_selected_entry = defaultEntry(
-                    details_frame_customer, "Total paid", 5, 1, entryWidth)
-                customer_total_due_occured_selected_entry = defaultEntry(
-                    details_frame_customer, "Total due occured", 6, 1, entryWidth)
-                customer_total_due_paid_selected_entry = defaultEntry(
-                    details_frame_customer, "Total due paid", 7, 1, entryWidth)
-                customer_total_additional_due_selected_entry = defaultEntry(
-                    details_frame_customer, "Net due", 8, 1, entryWidth)\
-
-
-                customer_code_selected_entry.insert(0, code)
-                customer_name_selected_entry.insert(0, customer_name_selected)
-                customer_address_selected_entry.insert(
-                    0, customer_address_selected)
-                customer_phone_selected_entry.insert(
-                    0, customer_phone_selected)
-                customer_total_sales_selected_entry.insert(
-                    0, customer_total_sales_selected)
-                customer_total_paid_selected_entry.insert(
-                    0, customer_total_paid_selected)
-                customer_total_due_occured_selected_entry.insert(
-                    0, customer_total_due_selected)
-                customer_total_due_paid_selected_entry.insert(
-                    0, customer_total_due_paid_selected)
-                customer_total_additional_due_selected_entry.insert(
-                    0, customer_total_additional_due)
-
-                customer_code_selected_entry.config(state="disabled")
-                customer_name_selected_entry.config(state="disabled")
-                customer_address_selected_entry.config(state="disabled")
-                customer_phone_selected_entry.config(state="disabled")
-                customer_total_sales_selected_entry.config(state="disabled")
-                customer_total_paid_selected_entry.config(state="disabled")
-                customer_total_due_occured_selected_entry.config(
-                    state="disabled")
-                customer_total_due_paid_selected_entry.config(state="disabled")
-                customer_total_additional_due_selected_entry.config(
-                    state="disabled")
-
-                details_window.mainloop()
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You didn't select a customer from the list.")
-
-                trv_customers.delete(*trv_customers.get_children())
-                updateCustomersList()
-
-        detailsCustomersFromCustomersList = defaultButton(
-            customerListFrame_customers, "Details", 1, 2, W+E, command=detailsCustomerFromCustomersList)
+        search_customer_sql_query = f"select customer_code, first_name, last_name, address, phone from customers where first_name like '%{query}%' or last_name like '%{query}%' or address like '%{query}%' or phone like '%{query}%' order by ID desc"
+        updateCustomersList(search_customer_sql_query)
 
     searchCustomerButton_customers = defaultButton(
         searchCustomerFrame_customers, "Search", 1, 1, W+E, command=searchCustomer)
 
     def resetCustomerList():
-        updateCustomersList()
+        updateCustomersList(main_customer_sql_query)
 
     resetCustomerList_customers = defaultButton(
         searchCustomerFrame_customers, "Reset", 1, 0, W+E, command=resetCustomerList)
@@ -3457,7 +2857,9 @@ def mainApp(state):
     productListFrame_products = defaultFrame(
         productFrame, "Products List", 0, 1, rowspan=2)
 
-    def updateProductsList():
+    main_product_sql_query = "select product, weight, price from products order by ID desc"
+
+    def updateProductsList(sql_query):
 
         trv_products = ttk.Treeview(productListFrame_products, columns=(1, 2, 3),
                                     show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
@@ -3474,8 +2876,7 @@ def mainApp(state):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            "select product, weight, price from products order by ID desc")
+        cursor.execute(sql_query)
         products_tuple_list = cursor.fetchall()
 
         for i in products_tuple_list:
@@ -3505,7 +2906,7 @@ def mainApp(state):
                     conn.commit()
                     conn.close()
                     trv_products.delete(*trv_products.get_children())
-                    updateProductsList()
+                    updateProductsList(main_product_sql_query)
                     UpdateHomeAddProduct_Frame()
                     updateStockAdd()
                     updateProductsDetails()
@@ -3517,9 +2918,9 @@ def mainApp(state):
                     title="Selection error", message="You didn't select a product from the list. Please select one and try to delete.")
 
                 trv_products.delete(*trv_products.get_children())
-                updateProductsList()
+                updateProductsList(main_product_sql_query)
                 updateStockAdd()
-                updateStockList_stocks()
+                updateStockList_stocks(main_stock_sql_query)
                 updateProductsDetails()
 
         deleteProductFromProductListButton = defaultButton(
@@ -3575,10 +2976,10 @@ def mainApp(state):
                         messagebox.showinfo(
                             title="Edit product successfully", message="Product is updated successfully.")
                         editWindow.destroy()
-                        updateProductsList()
+                        updateProductsList(main_product_sql_query)
                         UpdateHomeAddProduct_Frame()
                         updateStockAdd()
-                        updateStockList_stocks()
+                        updateStockList_stocks(main_stock_sql_query)
                         updateProductsDetails()
 
                     else:
@@ -3706,7 +3107,7 @@ def mainApp(state):
                     title="Selection error", message="You didn't select a product from the list.")
 
                 trv_products.delete(*trv_products.get_children())
-                updateProductsList()
+                updateProductsList(main_product_sql_query)
 
         detailsProductFromProductList = defaultButton(
             productListFrame_products, "Details", 1, 2, W+E, command=detailsProductFromProductList)
@@ -3758,10 +3159,10 @@ def mainApp(state):
                     product_weight_entry_products.delete(0, END)
                     product_price_Entry_products.delete(0, END)
 
-                    updateProductsList()
+                    updateProductsList(main_product_sql_query)
                     UpdateHomeAddProduct_Frame()
                     updateStockAdd()
-                    updateStockList_stocks()
+                    updateStockList_stocks(main_stock_sql_query)
                     updateProductsDetails()
 
                 else:
@@ -3779,7 +3180,7 @@ def mainApp(state):
 
     #------------------------ Showing Customer list Frame --------------------------------#
 
-    updateProductsList()
+    updateProductsList(main_product_sql_query)
 
     #------------------------ Search Customer Frame --------------------------------#
 
@@ -3791,258 +3192,14 @@ def mainApp(state):
 
     def searchProduct():
         query = searchProductEntry_products.get()
-
-        trv_products = ttk.Treeview(productListFrame_products, columns=(1, 2, 3),
-                                    show="headings", height=int(0.020*float(down)), padding=5, style="Custom.Treeview")
-        trv_products.grid(row=0, column=0, columnspan=3)
-
-        trv_products.heading(1, text='Name')
-        trv_products.heading(2, text='Weight (g)')
-        trv_products.heading(3, text='Price (bdt)')
-
-        trv_products.column(1, anchor=CENTER, width=int(0.170*float(right)))
-        trv_products.column(2, anchor=CENTER, width=int(0.170*float(right)))
-        trv_products.column(3, anchor=CENTER, width=int(0.170*float(right)))
-
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            f"select product, weight, price from products where product like '%{query}%' order by ID desc")
-        products_tuple_list = cursor.fetchall()
-
-        for i in products_tuple_list:
-            trv_products.insert("", "end", values=i)
-        trv_total_entry = defaultEntry(
-            productListFrame_products, "Total items in the list", 2, 1, entryWidth)
-        trv_total_entry.insert(0, f"{len(products_tuple_list)}")
-        trv_total_entry.config(state="disabled")
-
-        conn.commit()
-        conn.close()
-
-        def deleteProductFromProductList():
-            try:
-                selectedProductIID = trv_products.selection()[0]
-                name = trv_products.item(selectedProductIID)["values"][0]
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"DELETE FROM products WHERE product='{name}'")
-
-                resposne = messagebox.askyesno(
-                    title="Confirm delete produtc", message="Are you sure you want to delete this product?")
-                if resposne == True:
-                    conn.commit()
-                    conn.close()
-                    trv_products.delete(*trv_products.get_children())
-                    updateProductsList()
-                    updateStockList_stocks()
-                    updateProductsDetails()
-                else:
-                    return
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You didn't select a product from the list. Please select one and try to delete.")
-
-                trv_products.delete(*trv_products.get_children())
-                updateProductsList()
-
-        deleteProductFromProductListButton = defaultButton(
-            productListFrame_products, "Delete selected product", 1, 0, W+E, command=deleteProductFromProductList)
-
-        def editProductFromProductList():
-            try:
-                selectedProductIID = trv_products.selection()[0]
-                name = trv_products.item(selectedProductIID)["values"][0]
-
-                editWindow = Tk()
-                editWindow.title("Edit product")
-                editWindow.iconbitmap(icon_path)
-
-                editProductFrame = defaultFrame(
-                    editWindow, "Edit Product", 0, 0)
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select product, weight, price from products WHERE product='{name}'")
-                product_info_tuple_list = cursor.fetchall()
-
-                product_name_edit = defaultEntry(
-                    editProductFrame, "Product Name", 0, 0, 30)
-                weight_edit = defaultEntry(
-                    editProductFrame, "Weight (g)", 1, 0, 30)
-                price_edit = defaultEntry(
-                    editProductFrame, "Price (BDT)", 2, 0, 30)
-
-                product_name_edit.insert(0, product_info_tuple_list[0][0])
-                weight_edit.insert(0, product_info_tuple_list[0][1])
-                price_edit.insert(0, product_info_tuple_list[0][2])
-
-                def editAndSaveProduct():
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        f"update products set product='{product_name_edit.get().capitalize()}' where product='{name}'")
-                    cursor.execute(
-                        f"update products set weight={weight_edit.get()} where product='{name}'")
-                    cursor.execute(
-                        f"update products set price={price_edit.get()} where product='{name}'")
-
-                    resposne = messagebox.askyesno(
-                        title="Confirm Edit", message="Are you sure you want to edit this product's information?")
-                    if resposne == True:
-                        conn.commit()
-                        conn.close()
-
-                        messagebox.showinfo(
-                            title="Edit product successfully", message="Product is updated successfully.")
-                        updateProductsList()
-                        updateStockList_stocks()
-                        updateProductsDetails()
-                        editWindow.destroy()
-
-                    else:
-                        return
-
-                save_edit_button = defaultButton(
-                    editProductFrame, "Save Changes", 4, 1, W+E, command=editAndSaveProduct)
-
-                editWindow.mainloop()
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You did not select a product from the list.")
-
-        editProductFromProductListButton = defaultButton(
-            productListFrame_products, "Edit selected Product", 1, 1, W+E, command=editProductFromProductList)
-
-        def detailsProductFromProductList():
-
-            try:
-
-                selectedProductIID = trv_products.selection()[0]
-                name = trv_products.item(selectedProductIID)["values"][0]
-
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    f"select * from products where product='{name}'")
-                product_info_selected = cursor.fetchall()
-                product_ID_selected = product_info_selected[0][0]
-                product_Weight_selected = product_info_selected[0][2]
-                product_Price_selected = product_info_selected[0][3]
-
-                conn.commit()
-
-                cursor.execute(
-                    f"select sum(Quantity), sum(Price) from stocks where product_id={product_ID_selected} GROUP by product_id")
-                product_stock_info_selected = cursor.fetchall()
-
-                if product_stock_info_selected != []:
-                    product_Total_Stock_Added_selected = product_stock_info_selected[0][0]
-                    product_Total_Price_Stock_Added_selected = product_stock_info_selected[0][1]
-                else:
-                    product_Total_Stock_Added_selected = 0
-                    product_Total_Price_Stock_Added_selected = 0
-
-                conn.commit()
-
-                cursor.execute(
-                    f"select sum(quantity) from stocks_removed where product_id ={int(product_ID_selected)} GROUP by product_id")
-                product_Total_Stock_Removed_info_selected = cursor.fetchall()
-                if product_Total_Stock_Removed_info_selected != []:
-                    product_Total_Stock_Removed_selected = product_Total_Stock_Removed_info_selected[
-                        0][0]
-                else:
-                    product_Total_Stock_Removed_selected = 0
-
-                product_Total_Stock_Available_selected = int(
-                    product_Total_Stock_Added_selected) - int(product_Total_Stock_Removed_selected)
-
-                product_Total_Price_Stock_Removed_selected = float(
-                    product_Total_Stock_Removed_selected) * float(product_Price_selected)
-
-                conn.commit()
-                conn.close()
-
-                details_window = Tk()
-                details_window.title(f"{name} Details.")
-                details_window.iconbitmap(icon_path)
-
-                details_frame_product = defaultFrame(
-                    details_window, "Product Details", 0, 0)
-
-                product_name_selected_entry = defaultEntry(
-                    details_frame_product, "Product", 0, 0, entryWidth)
-                product_weight_selected_entry = defaultEntry(
-                    details_frame_product, "Weight", 1, 0, entryWidth)
-                product_price_selected_entry = defaultEntry(
-                    details_frame_product, "Price", 2, 0, entryWidth)
-                product_Total_Stock_Added_selected_entry = defaultEntry(
-                    details_frame_product, "Total Stock addded", 3, 0, entryWidth)
-                product_Total_Price_Stock_Addded_selected_entry = defaultEntry(
-                    details_frame_product, "Total Price of stock addded", 4, 0, entryWidth)
-                product_Total_Stock_Removed_selected_entry = defaultEntry(
-                    details_frame_product, "Total stock sold", 5, 0, entryWidth)
-                product_Total_Price_Stock_Removed_selected_entry = defaultEntry(
-                    details_frame_product, "Total price of stock sold", 6, 0, entryWidth)
-                product_Total_Stock_Available_selected_entry = defaultEntry(
-                    details_frame_product, "Total stock available", 7, 0, entryWidth)
-
-                product_name_selected_entry.insert(0, name)
-                product_weight_selected_entry.insert(
-                    0, product_Weight_selected)
-                product_price_selected_entry.insert(0, product_Price_selected)
-                product_Total_Stock_Added_selected_entry.insert(
-                    0, product_Total_Stock_Added_selected)
-                product_Total_Price_Stock_Addded_selected_entry.insert(
-                    0, product_Total_Price_Stock_Added_selected)
-                product_Total_Stock_Removed_selected_entry.insert(
-                    0, product_Total_Stock_Removed_selected)
-                product_Total_Price_Stock_Removed_selected_entry.insert(
-                    0, product_Total_Price_Stock_Removed_selected)
-                product_Total_Stock_Available_selected_entry.insert(
-                    0, product_Total_Stock_Available_selected)
-
-                product_name_selected_entry.config(state="disabled")
-                product_weight_selected_entry.config(state="disabled")
-                product_price_selected_entry.config(state="disabled")
-                product_Total_Stock_Added_selected_entry.config(
-                    state="disabled")
-                product_Total_Price_Stock_Addded_selected_entry.config(
-                    state="disabled")
-                product_Total_Stock_Removed_selected_entry.config(
-                    state="disabled")
-                product_Total_Price_Stock_Removed_selected_entry.config(
-                    state="disabled")
-                product_Total_Stock_Available_selected_entry.config(
-                    state="disabled")
-
-                details_window.mainloop()
-
-            except Exception as identifier:
-                messagebox.showerror(
-                    title="Selection error", message="You didn't select a product from the list.")
-
-                trv_products.delete(*trv_products.get_children())
-                updateProductsList()
-
-        detailsProductFromProductList = defaultButton(
-            productListFrame_products, "Details", 1, 2, W+E, command=detailsProductFromProductList)
+        serach_product_sql_query = f"select product, weight, price from products where product like '%{query}%' order by ID desc"
+        updateProductsList(serach_product_sql_query)
 
     searchProductButton_products = defaultButton(
         searchProductFrame_products, "Search", 1, 1, W+E, command=searchProduct)
 
     def resetProductsList():
-        updateProductsList()
+        updateProductsList(main_product_sql_query)
 
     resetProductsList_products = defaultButton(
         searchProductFrame_products, "Reset", 1, 0, W+E, command=resetProductsList)

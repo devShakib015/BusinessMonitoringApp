@@ -9,7 +9,7 @@ icon = os.path.join(BASE_DIR, "b.ico")
 db_path = os.path.join(BASE_DIR, "main.db")
 
 build_exe_options = {"packages": [
-    "os", "tkinter", "pytz", "reportlab"], "include_files": [icon, db_path]}
+    "os", "tkinter", "pytz", "reportlab", "xlsxwriter"], "include_files": [icon, db_path]}
 
 # GUI applications require a different base on Windows (the default is for a
 # console application).

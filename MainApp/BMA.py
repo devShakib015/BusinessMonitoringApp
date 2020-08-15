@@ -22,8 +22,8 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Monitoring App")
-    right = 1200  # root.winfo_screenwidth()  # 1280  #
-    down = 700  # root.winfo_screenheight()  # 720  #
+    right = root.winfo_screenwidth()  # 1280  #
+    down = root.winfo_screenheight()  # 720  #
     # root.geometry(f"{right}x{down}")
     # root.geometry(f"{right}x{down}")
 
@@ -732,7 +732,6 @@ def mainApp(state):
                 cursor.execute(
                     f"select round(sum(price)/sum(quantity),2) from stocks GROUP BY product_id")
                 cost_price_tuple_list = cursor.fetchall()
-                print(cost_price_tuple_list)
 
                 conn.commit()
 

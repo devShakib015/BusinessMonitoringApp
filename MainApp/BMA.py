@@ -21,7 +21,7 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 
 def mainApp(state):
     root = Tk()
-    root.title("Business Management")
+    root.title("Business Monitoring App")
     right = root.winfo_screenwidth()  # 1280  #
     down = root.winfo_screenheight()  # 720  #
     # root.geometry(f"{right}x{down}")
@@ -115,8 +115,8 @@ def mainApp(state):
     noteStyler.configure("TNotebook", background="#161C22",
                          tabposition='wn', tabmargins=[0, 0, 0, 0])
 
-    noteStyler.configure("TNotebook.Tab", background="#204051", width=17, foreground="white", relief=GROOVE, font=(
-        "verdana", int(0.00629*float(right))),  padding=[5, 10, 10, 10])
+    noteStyler.configure("TNotebook.Tab", background="#204051", width=14, foreground="white", relief=GROOVE, font=(
+        "verdana", int(0.00629*float(right))),  padding=[10, 10, 10, 10])
 
     noteStyler.map("TNotebook.Tab", background=[
         ("selected", "#e4324c")], foreground=[("selected", "white")])
@@ -158,17 +158,17 @@ def mainApp(state):
     aboutFrame = Frame(notebook, width=right, height=down, pady=30, padx=30)
     aboutFrame.pack(fill="both", expand=1)
 
-    notebook.add(homeFrame, text="Billings")
-    notebook.add(customerFrame, text="Customers")
-    notebook.add(dueFrame, text="Pay Dues")
+    notebook.add(homeFrame, text="Billing")
+    notebook.add(customerFrame, text="Add Customer")
+    notebook.add(dueFrame, text="Pay Due")
     notebook.add(saleFrame, text="Sales")
-    notebook.add(productFrame, text="Add Products",
+    notebook.add(productFrame, text="Add Product",
                  state=state)
-    notebook.add(stockFrame, text="Add Stocks",
+    notebook.add(stockFrame, text="Add Stock",
                  state=state)
-    notebook.add(productDetailsFrame, text="Product Details",
+    notebook.add(productDetailsFrame, text="Products Info",
                  state=state)
-    notebook.add(daily_stock_Frame, text="Stock Management",
+    notebook.add(daily_stock_Frame, text="Stocks Info",
                  state=state)
     notebook.add(statsFrame, text="Statistics",
                  state=state)
@@ -637,7 +637,7 @@ def mainApp(state):
         def stockManagement_trv_list(date):
 
             trv_stock_managementFrame = defaultFrame(
-                daily_stock_Frame, f"Daily Stock Management - {date}", 0, 1)
+                daily_stock_Frame, f"Stock Management - {date}", 0, 1)
 
             trv_stock_management = ttk.Treeview(trv_stock_managementFrame, columns=(
                 1, 2, 3, 4, 5), show="headings", height=int(0.02300*float(down)), padding=5, style="Custom.Treeview")
@@ -898,7 +898,7 @@ def mainApp(state):
 
     DueList_frame = defaultFrame(dueFrame, "Paying Dues List", 0, 1, rowspan=2)
     main_dues_sql_query = "select customers.customer_code, customers.first_name, customers.phone, duesPaid.amount, duesPaid.created_at from duesPaid INNER JOIN customers on duesPaid.customer_id=customers.ID order by duesPaid.ID desc"
-    payDues_frame = defaultFrame(dueFrame, "Pay Dues", 0, 0)
+    payDues_frame = defaultFrame(dueFrame, "Pay Due", 0, 0)
 
     def updateDueList(sql_query):
         trv_dues = ttk.Treeview(DueList_frame, columns=(
@@ -3231,30 +3231,42 @@ def mainApp(state):
     """
 
     def about():
-        about_frame = defaultFrame(aboutFrame, "About this software", 0, 0)
+        detailsFrame_about = defaultFrame(
+            aboutFrame, "Details about this software", 0, 0)
+
+        about_details_textField = Text(
+            detailsFrame_about, height=9, relief=FLAT, bg="#F0F0F0", font="verdana 11")
+        about_details_textField.grid(row=0, column=0, padx=20, pady=20)
+
+        details = "This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you."
+        about_details_textField.insert("end", details)
+        about_details_textField.config(state=DISABLED)
+
+        authorFrame = defaultFrame(
+            aboutFrame, "About author", 1, 0)
 
         def callback(url):
             webbrowser.open_new(url)
 
         detailsLabel = Label(
-            about_frame, text="This software is completely built using python. \nAuthor: Hossain KM Shahriar (Shakib)", font="verdana 13")
+            authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font="verdana 11")
         detailsLabel.pack()
 
-        github = Label(about_frame, text="Github",
+        github = Label(authorFrame, text="Github",
                        fg="#e4324c", cursor="hand2")
-        github.pack(side=LEFT)
+        github.pack(side=LEFT, expand=YES, anchor="e", pady=10)
         github.bind(
             "<Button-1>", lambda e: callback("https://github.com/venomShakib"))
 
-        website = Label(about_frame, text="Portfolio",
+        website = Label(authorFrame, text="Portfolio",
                         fg="#e4324c", cursor="hand2")
         website.pack(side=LEFT)
         website.bind(
             "<Button-1>", lambda e: callback("https://venomshakib.github.io/"))
 
-        facebook = Label(about_frame, text="Facebook",
+        facebook = Label(authorFrame, text="Facebook",
                          fg="#e4324c", cursor="hand2")
-        facebook.pack(side=LEFT)
+        facebook.pack(side=LEFT, expand=YES, anchor="w")
         facebook.bind(
             "<Button-1>", lambda e: callback("https://www.facebook.com/Shakib015"))
 

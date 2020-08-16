@@ -746,7 +746,7 @@ def mainApp(state):
 
                 total_cost_price = 0.0
                 if quantity_sold_tuple_list != []:
-                    for i in range(len(cost_price_tuple_list)):
+                    for i in range(len(quantity_sold_tuple_list)):
                         total_cost_price += float(cost_price_tuple_list[i][0]) * float(
                             quantity_sold_tuple_list[i][0])
 

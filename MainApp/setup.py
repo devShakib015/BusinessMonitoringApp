@@ -41,7 +41,7 @@ build_exe_options = {"packages": [
     "os", "tkinter", "pytz", "reportlab", "xlsxwriter"], "include_files": [icon, db_path]}
 
 bdist_msi_options = {'data': msi_data,
-                     'initial_target_dir': 'D:\\Business Monitoring App', 'install_icon': icon}
+                     'initial_target_dir': 'C:\\BMA', 'install_icon': icon}
 
 
 setup(name="Business Monitoring App",

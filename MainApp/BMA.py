@@ -22,22 +22,26 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Monitoring App")
-    right = root.winfo_screenwidth()  # 1280  #
-    down = root.winfo_screenheight()  # 720  #
-    # root.geometry(f"{right}x{down}")
-    # root.geometry(f"{right}x{down}")
 
-    #------------------------ Default width and height --------------------------------#
+    right, down = root.winfo_screenwidth(), root.winfo_screenheight()
+    root.geometry("%dx%d+0+0" % (right, down))
 
     entryWidth = int(0.01442*float(right))
     fontSize = int(0.00829*float(right))
 
-    # width = root.winfo_width()
-    # height = root.winfo_height()
-    x = (root.winfo_screenwidth() // 2) - (right // 2)
-    y = (root.winfo_screenheight() // 2) - (down // 2)
-    root.geometry(f"{right}x{down}+{x}+{y}")
-    root.iconbitmap(icon_path)
+    root.state('zoomed')
+    root.attributes('-fullscreen', False)
+
+    def toggleFullscreen(event):
+        fullscreenState = True
+        root.attributes('-fullscreen', fullscreenState)
+
+    def quitFullscreen(event):
+        fullscreenState = False
+        root.attributes('-fullscreen', fullscreenState)
+
+    root.bind("<F11>", toggleFullscreen)
+    root.bind("<Escape>", quitFullscreen)
 
     conn = sqlite3.connect(db_path)
 

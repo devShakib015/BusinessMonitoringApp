@@ -3315,7 +3315,7 @@ def mainApp(state):
             webbrowser.open_new(url)
 
         detailsLabel = Label(
-            authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font=f"verdana {fontSize}")
+            authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFounder of LazyProgs. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font=f"verdana {fontSize}")
         detailsLabel.pack()
 
         github = Label(authorFrame, text="Github",
@@ -3425,7 +3425,7 @@ def login():
     timeZone = pytz.timezone("asia/dhaka")
     x = datetime.now(timeZone)
     detailsLabel = Label(
-        loginWindow, text=f"Copyright @ Shakib, {x.year}", font="verdana 8")
+        loginWindow, text=f"Copyright @ LazyProgs, {x.year}", font="verdana 8")
     detailsLabel.grid(row=2, column=0, columnspan=3, pady=10)
 
     loginWindow.mainloop()

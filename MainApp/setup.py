@@ -45,8 +45,8 @@ bdist_msi_options = {'data': msi_data,
 
 
 setup(name="Business Monitoring App",
-      version="1.0.0",
-      author="Shakib [LazyProgs]",
+      version="1.0.2",
+      author="LazyProgs [Shakib]",
       author_email="kmshahriahhossain@gmail.com",
       description="This app will monitor your business and generate invoices and excel sheets. This is very useful for small business with limited products.",
       options={"build_exe": build_exe_options, "bdist_msi": bdist_msi_options},

@@ -20,7 +20,7 @@ if sys.platform == "win32":
 shortcut_table = [
     ("DesktopShortcut",        # Shortcut
      "DesktopFolder",          # Directory_
-     "BMA",           # Name
+     "Business Monitoring App",           # Name
      "TARGETDIR",              # Component_
      "[TARGETDIR]BMA.exe",  # Target
      None,                     # Arguments
@@ -40,12 +40,13 @@ msi_data = {"Shortcut": shortcut_table}
 build_exe_options = {"packages": [
     "os", "tkinter", "pytz", "reportlab", "xlsxwriter"], "include_files": [icon, db_path]}
 
-bdist_msi_options = {'data': msi_data}
+bdist_msi_options = {'data': msi_data,
+                     'initial_target_dir': 'D:\\Business Monitoring App', 'install_icon': icon}
 
 
 setup(name="Business Monitoring App",
-      version="5.0",
-      author="Shakib",
+      version="1.0.0",
+      author="Shakib [LazyProgs]",
       author_email="kmshahriahhossain@gmail.com",
       description="This app will monitor your business and generate invoices and excel sheets. This is very useful for small business with limited products.",
       options={"build_exe": build_exe_options, "bdist_msi": bdist_msi_options},

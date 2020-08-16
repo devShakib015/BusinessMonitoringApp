@@ -22,6 +22,7 @@ icon_path = os.path.join(BASE_DIR, "b.ico")
 def mainApp(state):
     root = Tk()
     root.title("Business Monitoring App")
+    root.iconbitmap(icon_path)
 
     right, down = root.winfo_screenwidth(), root.winfo_screenheight()
     root.geometry("%dx%d+0+0" % (right, down))

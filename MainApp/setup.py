@@ -5,7 +5,7 @@ from cx_Freeze import *
 
 # Dependencies are automatically detected, but it might need fine tuning.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-icon = os.path.join(BASE_DIR, "b.ico")
+icon = os.path.join(BASE_DIR, "bma_icon.ico")
 db_path = os.path.join(BASE_DIR, "main.db")
 
 
@@ -45,7 +45,7 @@ bdist_msi_options = {'data': msi_data,
 
 
 setup(name="Business Monitoring App",
-      version="1.0.7",
+      version="1.0.8",
       author="LazyProgs [Shakib]",
       author_email="kmshahriahhossain@gmail.com",
       description="Copyright © 2020 LazyProgs",

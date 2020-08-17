@@ -16,7 +16,7 @@ import xlsxwriter
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(BASE_DIR, "main.db")
-icon_path = os.path.join(BASE_DIR, "b.ico")
+icon_path = os.path.join(BASE_DIR, "bma_icon.ico")
 
 
 def mainApp(state):
@@ -86,7 +86,7 @@ def mainApp(state):
               font=f"verdana {fontSize-3} bold").grid(row=row, column=column, sticky=E)
         entry = ttk.Entry(parent, width=width, justify=RIGHT,
                           font=f"verdana {fontSize-3} bold", **options)
-        entry.grid(row=row, column=column + 1, pady=5, sticky=W+E)
+        entry.grid(row=row, column=column + 1, pady=5, padx=3, sticky=W+E)
         entry.bind_class("TEntry", "<Button-3><ButtonRelease-3>", show_menu)
 
         return entry
@@ -95,10 +95,10 @@ def mainApp(state):
 
     def defaultButton(parent, caption, row, column, sticky, **options):
         ttk.Style().configure(
-            "TButton", font=f"verdana {fontSize} bold", foreground="#e4324c")
+            "TButton", font=f"verdana {fontSize-2} bold", foreground="#e4324c", background="#3282b8")
         button = ttk.Button(parent, text=caption, cursor="hand2",
                             **options)
-        button.grid(row=row, column=column, pady=10, sticky=sticky)
+        button.grid(row=row, column=column, pady=10, padx=3, sticky=sticky)
 
         return button
 
@@ -119,16 +119,15 @@ def mainApp(state):
                                                                       'sticky': 'nswe'})],
                                                'sticky': 'nswe'})])
 
-    noteStyler.configure("TNotebook", background="#161C22",
-                         tabposition='wn', tabmargins=[0, 0, 0, 0])
+    noteStyler.configure("TNotebook", background="#204051",
+                         tabposition='wn', tabmargins=[10, 10, 10, 0])
 
     noteStyler.configure("TNotebook.Tab", background="#204051", width=14, foreground="white", relief=GROOVE, font=(
-        "verdana", int(0.00629*float(right))),  padding=[10, 10, 10, 10])
+        "verdana bold", int(0.00629*float(right))),  padding=[10, 10, 10, 10])
 
     noteStyler.map("TNotebook.Tab", background=[
-        ("selected", "#e4324c")], foreground=[("selected", "white")])
+        ("selected", "#e4324c")], foreground=[("selected", "#fffff0")])
 
-    #
     notebook = ttk.Notebook(root, padding=0, width=right, height=down)
     notebook.pack(fill="both", expand=1)
 
@@ -146,7 +145,7 @@ def mainApp(state):
     stockFrame.pack(fill="both", expand=1)
 
     saleFrame = Frame(notebook, width=right, height=down,
-                      pady=10, padx=(right * 0.040))
+                      pady=10, padx=(right * 0.030))
     saleFrame.pack(fill="both", expand=1)
 
     dueFrame = Frame(notebook, width=right, height=down, pady=10)
@@ -200,7 +199,7 @@ def mainApp(state):
     ])
 
     style.configure("Custom.Treeview.Heading",
-                    background="#006a71", foreground="#fff", relief="flat", font=(
+                    background="#3b6978", foreground="#fffff0", font=(
                         "times", fontSize), padding=5)
     style.map("Custom.Treeview.Heading",
               relief=[('active', 'groove'), ('pressed', 'sunken')])
@@ -1313,8 +1312,8 @@ def mainApp(state):
                 for i in sales_product_information:
                     total_sales_without_discounts += float(i[4])
 
-                discount_selected = ((total_sales_without_discounts -
-                                      float(net_total_selected)) / total_sales_without_discounts) * 100.0
+                discount_selected = "{:.2f}".format(((total_sales_without_discounts -
+                                                      float(net_total_selected)) / total_sales_without_discounts) * 100.0)
 
                 conn.commit()
                 conn.close()

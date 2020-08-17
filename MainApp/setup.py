@@ -45,9 +45,9 @@ bdist_msi_options = {'data': msi_data,
 
 
 setup(name="Business Monitoring App",
-      version="1.0.2",
+      version="1.0.6",
       author="LazyProgs [Shakib]",
       author_email="kmshahriahhossain@gmail.com",
-      description="This app will monitor your business and generate invoices and excel sheets. This is very useful for small business with limited products.",
+      description="Copyright © 2020 LazyProgs",
       options={"build_exe": build_exe_options, "bdist_msi": bdist_msi_options},
       executables=[Executable("BMA.py", icon=icon, base=base)])

@@ -1091,80 +1091,92 @@ def mainApp(state):
                 conn.commit()
                 conn.close()
 
-                def payDue_save_dues():
-                    try:
-                        pay_due_amount = customer_Pay_Amount_entry_dues.get()
-                        code = customer_code_search_dues_entry.get()
+                if float(customer_Net_Dues_entry_dues.get()) == 0.0:
+                    customer_due_pay_amount_save_button = defaultButton(
+                        payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
+                else:
 
-                        conn = sqlite3.connect(db_path)
-                        cursor = conn.cursor()
+                    def payDue_save_dues():
+                        try:
+                            pay_due_amount = customer_Pay_Amount_entry_dues.get()
+                            code = customer_code_search_dues_entry.get()
+                            additional_due_amount = customer_Net_Dues_entry_dues.get()
 
-                        cursor.execute(
-                            f"select ID from customers where customer_code={int(code)}")
-                        c_ID = cursor.fetchone()[0]
-
-                        conn.commit()
-
-                        cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
-                                       (c_ID, float(pay_due_amount)))
-
-                        resposne = messagebox.askyesno(
-                            title="Confirm Pay Due", message="Are You Sure to Pay this due amount? This will be saved in database. After saving this information you cannot change.")
-                        if resposne == True:
-                            conn.commit()
-                            conn.close()
-                            customer_due_pay_amount_save_button = defaultButton(
-                                payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
-                            messagebox.showinfo(
-                                title="Pay Due Success", message="The due payment has been saved successfully.")
-
-                            def generate_due_invoice():
-
-                                c_code_due = customer_code_entry_dues.get()
-                                c_name_due = customer_Name_entry_dues.get()
-                                c_phone_due = customer_Phone_entry_dues.get()
-                                c_additional_due = customer_Net_Dues_entry_dues.get()
-                                pay_due_amount = customer_Pay_Amount_entry_dues.get()
-                                current_due = "{:.2f}".format(
-                                    float(c_additional_due) - float(pay_due_amount))
-
+                            if float(pay_due_amount) > float(additional_due_amount):
+                                messagebox.showerror(
+                                    title='Pay Due Error', message="You cannot pay more than the dues.")
+                            else:
                                 conn = sqlite3.connect(db_path)
                                 cursor = conn.cursor()
 
                                 cursor.execute(
-                                    f"select address from customers where customer_code={int(c_code_due)}")
-                                c_address_due = cursor.fetchone()[0]
+                                    f"select ID from customers where customer_code={int(code)}")
+                                c_ID = cursor.fetchone()[0]
 
                                 conn.commit()
 
-                                cursor.execute(
-                                    "select created_at from duesPaid order by ID desc limit 1 ")
-                                due_Date = cursor.fetchone()[0]
+                                cursor.execute("insert into duesPaid(customer_id, amount) values (?,?)",
+                                               (c_ID, float(pay_due_amount)))
 
-                                conn.commit()
+                                resposne = messagebox.askyesno(
+                                    title="Confirm Pay Due", message="Are You Sure to Pay this due amount? This will be saved in database. After saving this information you cannot change.")
+                                if resposne == True:
+                                    conn.commit()
+                                    conn.close()
+                                    customer_due_pay_amount_save_button = defaultButton(
+                                        payDues_frame, "Pay Due", 7, 1, W+E, state="disabled")
+                                    customer_code_search_dues_button = defaultButton(
+                                        payDues_frame, "Search", 1, 1, W+E, state="disabled")
+                                    messagebox.showinfo(
+                                        title="Pay Due Success", message="The due payment has been saved successfully.")
 
-                                conn.close()
+                                    def generate_due_invoice():
 
-                                create_due_invoice(due_Date, c_code_due, c_name_due, c_phone_due,
-                                                   c_address_due, c_additional_due, pay_due_amount, current_due)
+                                        c_code_due = customer_code_entry_dues.get()
+                                        c_name_due = customer_Name_entry_dues.get()
+                                        c_phone_due = customer_Phone_entry_dues.get()
+                                        c_additional_due = customer_Net_Dues_entry_dues.get()
+                                        pay_due_amount = customer_Pay_Amount_entry_dues.get()
+                                        current_due = "{:.2f}".format(
+                                            float(c_additional_due) - float(pay_due_amount))
 
-                                payDue_dues()
-                                generate_due_invoice_button = defaultButton(
-                                    payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
+                                        conn = sqlite3.connect(db_path)
+                                        cursor = conn.cursor()
 
-                            generate_due_invoice_button = defaultButton(
-                                payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
-                            updateDueList(main_dues_sql_query)
-                            stats()
+                                        cursor.execute(
+                                            f"select address from customers where customer_code={int(c_code_due)}")
+                                        c_address_due = cursor.fetchone()[0]
 
-                        else:
-                            return
-                    except Exception as identifier:
-                        messagebox.showerror(title="Customer Error",
-                                             message="Please enter valid Information.")
+                                        conn.commit()
 
-                customer_due_pay_amount_save_button = defaultButton(
-                    payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
+                                        cursor.execute(
+                                            "select created_at from duesPaid order by ID desc limit 1 ")
+                                        due_Date = cursor.fetchone()[0]
+
+                                        conn.commit()
+
+                                        conn.close()
+
+                                        create_due_invoice(due_Date, c_code_due, c_name_due, c_phone_due,
+                                                           c_address_due, c_additional_due, pay_due_amount, current_due)
+
+                                        payDue_dues()
+                                        generate_due_invoice_button = defaultButton(
+                                            payDues_frame, "Generate Due Invoice", 8, 1, W+E, state="disabled")
+
+                                    generate_due_invoice_button = defaultButton(
+                                        payDues_frame, "Generate Due Invoice", 8, 1, W+E, command=generate_due_invoice)
+                                    updateDueList(main_dues_sql_query)
+                                    stats()
+
+                                else:
+                                    return
+                        except Exception as identifier:
+                            messagebox.showerror(title="Customer Error",
+                                                 message="Please enter valid Information.")
+
+                    customer_due_pay_amount_save_button = defaultButton(
+                        payDues_frame, "Pay Due", 7, 1, W+E, command=payDue_save_dues)
 
             except Exception as identifier:
                 customer_code_entry_dues.config(state="disabled")
@@ -1999,16 +2011,66 @@ def mainApp(state):
                                                     conn.commit()
 
                                                     conn.close()
+
                                                     UpdateSalesList_sales(
                                                         main_sql_sales_list_query)
                                                     updateDueList(
                                                         main_dues_sql_query)
                                                     updateProductsDetails()
                                                     stats()
+
                                                     messagebox.showinfo(
                                                         title="Save Success", message=f"The information is succesfully saved in database. The invoice number is {sale_code}.")
                                                     saveButton_home = defaultButton(
                                                         productsListFrame_home, "Save Invoice", 9, 0, W+E, state="disabled")
+
+                                                    customerCodeEntry_home.config(
+                                                        state="enabled")
+                                                    customerNameEntry_home.config(
+                                                        state="enabled")
+                                                    customerPhoneEntry_home.config(
+                                                        state="enabled")
+                                                    customerAddressEntry_home.config(
+                                                        state="enabled")
+
+                                                    CustomerSearchCode_home.delete(
+                                                        0, END)
+                                                    customerCodeEntry_home.delete(
+                                                        0, END)
+                                                    customerNameEntry_home.delete(
+                                                        0, END)
+                                                    customerPhoneEntry_home.delete(
+                                                        0, END)
+                                                    customerAddressEntry_home.delete(
+                                                        0, END)
+
+                                                    customerCodeEntry_home.config(
+                                                        state="disabled")
+                                                    customerNameEntry_home.config(
+                                                        state="disabled")
+                                                    customerPhoneEntry_home.config(
+                                                        state="disabled")
+                                                    customerAddressEntry_home.config(
+                                                        state="disabled")
+
+                                                    stockManagement()
+
+                                                    deleteButton_home = defaultButton(
+                                                        productsListFrame_home, "Delete Product", 1, 0, W+E, state="disabled")
+
+                                                    deleteAllButton_home = defaultButton(
+                                                        productsListFrame_home, "Delete All Products", 1, 1, W+E, state="disabled")
+
+                                                    discountButton_home = defaultButton(
+                                                        productsListFrame_home, "Get Net Amount", 4, 1, W+E, state="disabled")
+
+                                                    addPaymentButton_home = defaultButton(
+                                                        productsListFrame_home, "Add Payment", 7, 1, W+E, state="disabled")
+
+                                                    addCustomerButton_home = defaultButton(
+                                                        customerAddFrame_home, "Add Customer", 1, 1, W+E, state="disabled")
+                                                    addProductButton_home = defaultButton(
+                                                        productAddFrame_Home, "Add Product", 6, 1, W+E, state="disabled")
 
                                                     def printInvoice():
                                                         conn = sqlite3.connect(
@@ -2033,42 +2095,13 @@ def mainApp(state):
                                                         create_invoice(
                                                             sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), discount_percentage_applied, discount_amount, float(sale_amount), float(paid_amount), float(due_amount))
 
-                                                        customerCodeEntry_home.config(
-                                                            state="enabled")
-                                                        customerNameEntry_home.config(
-                                                            state="enabled")
-                                                        customerPhoneEntry_home.config(
-                                                            state="enabled")
-                                                        customerAddressEntry_home.config(
-                                                            state="enabled")
-
-                                                        CustomerSearchCode_home.delete(
-                                                            0, END)
-                                                        customerCodeEntry_home.delete(
-                                                            0, END)
-                                                        customerNameEntry_home.delete(
-                                                            0, END)
-                                                        customerPhoneEntry_home.delete(
-                                                            0, END)
-                                                        customerAddressEntry_home.delete(
-                                                            0, END)
-
-                                                        customerCodeEntry_home.config(
-                                                            state="disabled")
-                                                        customerNameEntry_home.config(
-                                                            state="disabled")
-                                                        customerPhoneEntry_home.config(
-                                                            state="disabled")
-                                                        customerAddressEntry_home.config(
-                                                            state="disabled")
-
                                                         deleteAll()
-                                                        stockManagement()
-
                                                         netAmountEntry_home.config(
                                                             state="enabled")
+
                                                         netAmountEntry_home.delete(
                                                             0, END)
+
                                                         netAmountEntry_home.config(
                                                             state="disabled")
 
@@ -2080,22 +2113,14 @@ def mainApp(state):
 
                                                         dueEntry_home.config(
                                                             state="enabled")
+
                                                         dueEntry_home.delete(
                                                             0, END)
+
                                                         dueEntry_home.config(
                                                             state="disabled")
 
-                                                        deleteButton_home = defaultButton(
-                                                            productsListFrame_home, "Delete Product", 1, 0, W+E, state="disabled")
-
-                                                        deleteAllButton_home = defaultButton(
-                                                            productsListFrame_home, "Delete All Products", 1, 1, W+E, state="disabled")
-
-                                                        discountButton_home = defaultButton(
-                                                            productsListFrame_home, "Get Net Amount", 4, 1, W+E, state="disabled")
-
-                                                        addPaymentButton_home = defaultButton(
-                                                            productsListFrame_home, "Add Payment", 7, 1, W+E, state="disabled")
+                                                        UpdateHomeAddProduct_Frame()
 
                                                         printButton_home = defaultButton(
                                                             productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, state="disabled")
@@ -3425,7 +3450,7 @@ def login():
     timeZone = pytz.timezone("asia/dhaka")
     x = datetime.now(timeZone)
     detailsLabel = Label(
-        loginWindow, text=f"Copyright @ LazyProgs, {x.year}", font="verdana 8")
+        loginWindow, text=f"Copyright © {x.year} LazyProgs", font="verdana 8")
     detailsLabel.grid(row=2, column=0, columnspan=3, pady=10)
 
     loginWindow.mainloop()

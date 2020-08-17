@@ -776,12 +776,12 @@ def mainApp(state):
             if dusePaid_stats_info[0][0] != None:
                 net_duesPaid_stats = dusePaid_stats_info[0][0]
 
-            total_payment_get_stats = net_paid_sats + net_duesPaid_stats
+            total_payment_get_stats = net_paid_sats + float(net_duesPaid_stats)
 
-            total_due_stats = net_sales_sats - total_payment_get_stats
+            total_due_stats = float(net_sales_sats) - total_payment_get_stats
 
             total_cost_of_sales = getCostPrice(year)
-            gross_profit = net_sales_sats - total_cost_of_sales
+            gross_profit = float(net_sales_sats) - total_cost_of_sales
 
             total_sales_stats_entry = defaultEntry(
                 yearlyStatsFrame, "Total Sales", 1, 0, entryWidth)
@@ -796,11 +796,11 @@ def mainApp(state):
             separator = ttk.Separator(yearlyStatsFrame, orient=HORIZONTAL)
             separator.grid(row=4, columnspan=2, sticky="ew", pady=20)
 
-            total_sales_stats_entry.insert(0, net_sales_sats)
+            total_sales_stats_entry.insert(0, "{:.2f}".format(net_sales_sats))
             total_payment_get_stats_entry.insert(0, total_payment_get_stats)
-            total_due_stats_entry.insert(0, total_due_stats)
+            total_due_stats_entry.insert(0, "{:.2f}".format(total_due_stats))
             total_cost_price_entry.insert(0, total_cost_of_sales)
-            total_gross_profit_entry.insert(0, gross_profit)
+            total_gross_profit_entry.insert(0, "{:.2f}".format(gross_profit))
 
             total_sales_stats_entry.config(state="disabled")
             total_payment_get_stats_entry.config(state="disabled")

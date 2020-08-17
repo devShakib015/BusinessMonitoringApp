@@ -7,6 +7,9 @@ import pytz
 from datetime import datetime
 import webbrowser
 
+from time import strftime
+from datetime import datetime
+
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -27,7 +30,7 @@ def mainApp(state):
     right, down = root.winfo_screenwidth(), root.winfo_screenheight()
     root.geometry("%dx%d+0+0" % (right, down))
 
-    entryWidth = int(0.01442*float(right))
+    entryWidth = int(0.01842*float(right))
     fontSize = int(0.00829*float(right))
 
     root.state('zoomed')
@@ -1519,9 +1522,9 @@ def mainApp(state):
 
         allProducts = getAllProducts()
         choose_product_label = Label(productAddFrame_Home, text="Product:",
-                                     font=f"Courier {fontSize} bold").grid(row=0, column=0, sticky=E, padx=10)
-        productCombo_home = ttk.Combobox(productAddFrame_Home, value=allProducts, width=entryWidth,
-                                         font=f"Courier {fontSize} bold")
+                                     font=f"Verdana {fontSize-2} bold").grid(row=0, column=0, sticky=E, padx=10)
+        productCombo_home = ttk.Combobox(productAddFrame_Home, value=allProducts, width=entryWidth-3,
+                                         font=f"verdana {fontSize-3}")
         productCombo_home.set("Choose one...")
         productCombo_home.bind("<<ComboboxSelected>>", productCombo)
         productCombo_home.grid(row=0, column=1, pady=5)
@@ -2193,6 +2196,20 @@ def mainApp(state):
 
         productsListFrame_home = defaultFrame(
             homeFrame, "Invoice Items List", 0, 1, rowspan=2)
+
+        def showTime():
+            def time():
+                string = strftime('%H:%M:%S %p')
+                lbl.config(text=string)
+                lbl.after(1000, time)
+
+            lbl = Label(productsListFrame_home, font=(
+                'verdana', fontSize, 'bold'), foreground="#e4324c")
+
+            lbl.grid(row=10, column=1, sticky=E)
+
+            time()
+        showTime()
 
         #------------------------ Display showing at the first in Invoice List but these don't work ----------------------------#
 

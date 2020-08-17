@@ -45,7 +45,7 @@ bdist_msi_options = {'data': msi_data,
 
 
 setup(name="Business Monitoring App",
-      version="1.0.6",
+      version="1.0.7",
       author="LazyProgs [Shakib]",
       author_email="kmshahriahhossain@gmail.com",
       description="Copyright © 2020 LazyProgs",

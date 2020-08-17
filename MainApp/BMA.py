@@ -52,9 +52,9 @@ def mainApp(state):
 
     def defaultFrame(parent, caption, row, column, **options):
         frame = LabelFrame(parent, text=caption, padx=20,
-                           pady=20, font=f"Courier {fontSize} bold")
+                           pady=20, font=f"verdana {fontSize} bold", fg="#e4324c")
         frame.grid(row=row, column=column, padx=20,
-                   pady=20, **options, sticky="nswe")
+                   pady=20, **options, sticky=NSEW)
         return frame
 
     #------------------------ Default Entry Function ----------------------------------------#
@@ -83,9 +83,9 @@ def mainApp(state):
         make_menu(parent)
 
         Label(parent, text=caption + ": ",
-              font=f"Courier {fontSize} bold").grid(row=row, column=column, sticky=E)
+              font=f"verdana {fontSize-3} bold").grid(row=row, column=column, sticky=E)
         entry = ttk.Entry(parent, width=width, justify=RIGHT,
-                          font=f"Courier {fontSize} bold", **options)
+                          font=f"verdana {fontSize-3} bold", **options)
         entry.grid(row=row, column=column + 1, pady=5, sticky=W+E)
         entry.bind_class("TEntry", "<Button-3><ButtonRelease-3>", show_menu)
 
@@ -99,6 +99,8 @@ def mainApp(state):
         button = ttk.Button(parent, text=caption, cursor="hand2",
                             **options)
         button.grid(row=row, column=column, pady=10, sticky=sticky)
+
+        return button
 
     #------------------------ Creating notebook --------------------------------#
 
@@ -161,7 +163,7 @@ def mainApp(state):
     productDetailsFrame.pack(fill="both", expand=1)
 
     aboutFrame = Frame(notebook, width=right, height=down,
-                       pady=(down * 0.15), padx=(right * 0.02))
+                       pady=(down * 0.08), padx=(right * 0.02))
     aboutFrame.pack(fill="both", expand=1)
 
     notebook.add(homeFrame, text="Billing")
@@ -1291,8 +1293,8 @@ def mainApp(state):
                 salesCode = trv_sales.item(selectedSalesIID)["values"][0]
                 customer_name_selected = trv_sales.item(
                     selectedSalesIID)["values"][1]
-                customer_phone_selected = trv_sales.item(selectedSalesIID)[
-                    "values"][2]
+                customer_phone_selected = str(trv_sales.item(selectedSalesIID)[
+                    "values"][2])
                 net_total_selected = trv_sales.item(
                     selectedSalesIID)["values"][3]
                 paid_total_selected = trv_sales.item(
@@ -3326,22 +3328,23 @@ def mainApp(state):
             aboutFrame, "Details about this software", 0, 0)
 
         about_details_textField = Text(
-            detailsFrame_about, height=12, width=68, relief=FLAT, bg="#F0F0F0", font=f"verdana {fontSize}")
+            detailsFrame_about, height=13, relief=FLAT, bg="#F0F0F0", font=f"verdana {fontSize}")
         about_details_textField.grid(row=0, column=0, padx=20, pady=20)
-
-        details = "This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you.\n\nCurrently this software is owned by Biocin Bangladesh Company. \nIt cannot be used for any other companies or personal use."
+        timeZone = pytz.timezone("asia/dhaka")
+        x = datetime.now(timeZone)
+        details = f"This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you.\n\nCurrently this software is owned by Biocin Bangladesh Company. \nIt cannot be used for any other companies or personal use. \n\nCopyright © {x.year} LazyProgs"
         about_details_textField.insert("end", details)
         about_details_textField.config(state=DISABLED)
 
         authorFrame = defaultFrame(
-            aboutFrame, "About author", 0, 1)
+            aboutFrame, "About author", 1, 0)
 
         def callback(url):
             webbrowser.open_new(url)
 
         detailsLabel = Label(
             authorFrame, text="Hossain KM Shahriar (Shakib).\nSoftware Engineer. \nFounder of LazyProgs. \nFrom Bangladesh. \nStudent of Yangzhou University, China. \nPassionate about Python. \nContact: +8801710265421", font=f"verdana {fontSize}")
-        detailsLabel.pack()
+        detailsLabel.pack(side=TOP, expand=True)
 
         github = Label(authorFrame, text="Github",
                        fg="#e4324c", cursor="hand2")
@@ -3409,7 +3412,7 @@ def login():
             mainApp("normal")
 
     loginFrame = LabelFrame(
-        loginWindow, text="Login as an Admin", padx=20, pady=20)
+        loginWindow, text="Login as an Admin", padx=20, pady=20, font="verdana 10 bold", fg="#e4324c")
     loginFrame.grid(row=1, column=0, padx=40, pady=15, columnspan=3)
 
     userLabel = Label(loginFrame, text="Username : ", font="verdana 10").grid(
@@ -3430,7 +3433,7 @@ def login():
     loginButton = Button(loginFrame, text="Login as Admin", padx=10, pady=5, bg="#e4324c", fg="white", border=0,
                          activebackground="#e4324c", activeforeground="#fffff0", font="verdana 10", command=getAccount).grid(row=3, column=1, sticky=W+E, pady=10)
     employeeFrame = LabelFrame(
-        loginWindow, text="Login as an Employee", padx=20, pady=20)
+        loginWindow, text="Login as an Employee", padx=20, pady=20, font="verdana 10 bold", fg="#e4324c")
     employeeFrame.grid(row=0, column=0, padx=40,
                        pady=50, sticky=W+E, columnspan=3)
 

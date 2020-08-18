@@ -16,10 +16,12 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 
 import xlsxwriter
+from num2words import num2words
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.join(BASE_DIR, "main.db")
 icon_path = os.path.join(BASE_DIR, "bma_icon.ico")
+image_path = os.path.join(BASE_DIR, "Log.jpg")
 
 
 def mainApp(state):
@@ -168,9 +170,9 @@ def mainApp(state):
                        pady=(down * 0.08), padx=(right * 0.02))
     aboutFrame.pack(fill="both", expand=1)
 
-    notebook.add(homeFrame, text="Billing")
+    notebook.add(homeFrame, text="Create Invoice")
     notebook.add(customerFrame, text="Add Customer")
-    notebook.add(dueFrame, text="Pay Due")
+    notebook.add(dueFrame, text="Due Payment")
     notebook.add(saleFrame, text="Sales")
     notebook.add(productFrame, text="Add Product",
                  state=state)
@@ -178,7 +180,7 @@ def mainApp(state):
                  state=state)
     notebook.add(productDetailsFrame, text="Products Info",
                  state=state)
-    notebook.add(daily_stock_Frame, text="Stocks Info",
+    notebook.add(daily_stock_Frame, text="Sales Info",
                  state=state)
     notebook.add(statsFrame, text="Statistics",
                  state=state)
@@ -216,11 +218,13 @@ def mainApp(state):
 
     """
 
-    def create_invoice(invoice_number, invoice_date, customer_code, customer_name, customer_phone, customer_address, product_tuple_list, total_sales, discount_rate, discount_amount, net_sales, payment_amount, due_amount):
-
+    def create_invoice(invoice_number, invoice_date, customer_code, customer_name, customer_phone, customer_address, product_tuple_list, total_sales, discount_rate, discount_amount, net_sales, payment_amount, due_amount, previous_due, total_payable):
         # convert the font so it is compatible
         pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
         pdfmetrics.registerFont(TTFont('Verdana', 'Verdana.ttf'))
+
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(BASE_DIR, "Logo.jpg")
 
         # Page information
         page_width = 595
@@ -248,84 +252,81 @@ def mainApp(state):
         blue30transparent = Color(0, 0, 100, alpha=0.3)
         goodColor = HexColor("#2b92c5")
 
+        c.drawImage(image_path, 45, 770,
+                    width=60, height=67)
+
         # sets fill color like orange
+        c.line(45, 750, 550, 750)
+        c.line(45, 690, 550, 690)
+        c.line(45, 750, 45, 690)
+        c.line(550, 750, 550, 690)
 
         # Invoice information
-        c.setFont('Verdana', 20)
-        text = 'Biocin Bangladesh'
-        # text_width = stringWidth(text, 'Arial', 10)
-        c.drawString(4*margin, page_height - margin*3, text)
+        c.setFont('Verdana', 24)
+        text = 'Biochin Bangladesh'
+        text_width = stringWidth(text, 'Verdana', 24)
+        c.drawString(int((595 - text_width)/2), 813, text)
 
-        c.setFont('Verdana', 20)
+        c.setFont('Verdana', 16)
         text = 'INVOICE'
-        # text_width = stringWidth(text, 'Arial', 10)
-        c.drawString(4*margin + 280, page_height - margin*3, text)
+        text_width = stringWidth(text, 'Verdana', 16)
+        c.drawString(int((595 - text_width)/2), 756, text)
 
         y = page_height - margin*6
         x = 4*margin
         # x2 = x + 30
 
         # Invoice number
-        c.setFont('Verdana', 10)
-        text = 'Address: '
-        c.drawString(x, y, text)
-        tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "RP Gate, Rajendrapur, Gazipur, Dhaka")
+        c.setFont('Verdana', 9)
+        text = "RP Gate, Rajendrapur, Gazipur, Dhaka"
+        tw = stringWidth(text, 'Verdana', 9)
+        c.drawString(int((595 - tw)/2), 795,
+                     text)
 
-        text = 'Invoice No: '
-        c.drawString(x + 280, y, text)
+        text = f'Invoice No: {i_n}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, i_n)
+        c.drawString(55, 702, text)
         y -= margin
 
-        text = 'Phone: '
-        c.drawString(x, y, text)
+        text = "Mob: 01716-573618, Email: biochinbanglades@gmail.com"
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "01716-573618")
+        c.drawString(int((595 - tw)/2) + 13, 780,
+                     text)
 
-        text = 'Invoice Date: '
-        c.drawString(x + 280, y, text)
+        text = f'Invoice Date: {i_d}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, i_d)
+        c.drawString(x + 270, 702, text)
         y -= margin
 
-        text = 'Email: '
-        c.drawString(x, y, text)
+        text = f'PC: {c_c}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "biocinbangladesh@gmail.com")
-
-        text = 'Customer Code: '
-        c.drawString(x + 280, y, text)
-        tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_c)
+        c.drawString(55, 717, text)
         y -= margin
 
-        text = 'Customer Name: '
-        c.drawString(x + 280, y, text)
+        text = f'PN: {c_n}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_n)
+        c.drawString(55, 732, text)
         y -= margin
 
-        text = 'Customer Phone: '
-        c.drawString(x + 280, y, text)
+        text = f'Phone: {c_p}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_p)
+        c.drawString(x + 270, 717, text)
         y -= margin
 
-        text = 'Customer Address: '
-        c.drawString(x + 280, y, text)
+        text = f'PA: {c_a}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_a)
+        c.drawString(x + 270, 732, text)
+
         y -= margin
         y -= margin
 
         box_x_left = 45
         box_x_right = 550
         box_y_top = y
-        box_y_bottom = 150
+        box_y_bottom = 230
 
         c.setFillColor(HexColor("#EAEAEC"))
-        c.rect(box_x_left, box_y_bottom, 505, y - 170, fill=True, stroke=True)
+        c.rect(box_x_left, box_y_bottom, 505, y - 250, fill=True, stroke=True)
 
         c.line(box_x_left, box_y_top, box_x_right, box_y_top)
         c.line(box_x_left, box_y_bottom, box_x_right, box_y_bottom)
@@ -365,7 +366,7 @@ def mainApp(state):
         c.line(box_x_left + 340, box_y_top, box_x_left + 340, box_y_bottom)
         c.line(box_x_left + 400, box_y_top, box_x_left + 400, box_y_bottom)
 
-        p_name_pos = box_x_left + 30
+        p_name_pos = box_x_left + 25
         p_weight_pos = box_x_left + 230
         p_price_pos = box_x_left + 295
         p_quantity_pos = box_x_left + 360
@@ -375,8 +376,8 @@ def mainApp(state):
 
         c.setFillColor(colors.black)
         for i in l:
-            c.drawString(p_name_pos, box_top_pos, str(
-                l.index(i) + 1) + ". " + str(i[0]))
+            c.drawString(p_name_pos, box_top_pos,
+                         str(l.index(i) + 1) + ". " + str(i[0]))
             c.drawString(p_weight_pos, box_top_pos, str(i[1]))
             c.drawString(p_price_pos, box_top_pos, str(i[2]))
             c.drawString(p_quantity_pos, box_top_pos, str(i[3]))
@@ -450,18 +451,59 @@ def mainApp(state):
         c.drawString(box_x_left + 170 + (555 - t_text_width) /
                      2, box_bottom_pos, t_text)
 
+        box_bottom_pos -= 14
+
+        c.setFillColor(colors.black)
+
+        d_text = "Previous Due: "
+        d_text_width = stringWidth(d_text, 'Arial', 10)
+        c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                     2, box_bottom_pos, d_text)
+        c.setFillColor(colors.red)
+        t_text = previous_due
+        t_text_width = stringWidth(t_text, 'Arial', 10)
+        c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                     2, box_bottom_pos, t_text)
+
+        box_bottom_pos -= 8
+
+        c.line(box_x_left + 200, box_bottom_pos, 555, box_bottom_pos)
+
+        box_bottom_pos -= 12
+
+        c.setFillColor(colors.black)
+
+        d_text = "Total Payable: "
+        d_text_width = stringWidth(d_text, 'Arial', 10)
+        c.drawString(box_x_left + 130 + (380 - d_text_width) /
+                     2, box_bottom_pos, d_text)
+        c.setFillColor(colors.red)
+        t_text = total_payable
+        t_text_width = stringWidth(t_text, 'Arial', 10)
+        c.drawString(box_x_left + 170 + (555 - t_text_width) /
+                     2, box_bottom_pos, t_text)
+
+        box_bottom_pos -= 18
+
+        c.setFillColor(colors.black)
+
+        d_text = f"Amount in Words: {num2words(float(total_payable))}"
+        d_text_width = stringWidth(d_text, 'Arial', 10)
+        c.drawString(box_x_left + 120 + (380 - d_text_width) /
+                     2, box_bottom_pos - 10, d_text)
+
         c.setFillColor(colors.black)
         text = "Authorized Signature"
         tw = stringWidth(text, "Verdana", 10)
-        c.drawString(box_x_left, box_bottom_pos + 48, text)
-        c.line(box_x_left - 5, box_bottom_pos+12+48,
-               box_x_left + tw + 5, box_bottom_pos+12+48)
+        c.drawString(box_x_left, box_bottom_pos + 60, text)
+        c.line(box_x_left - 5, box_bottom_pos+24+48,
+               box_x_left + tw + 5, box_bottom_pos+24+48)
 
         text = "Customer Signature"
         tw = stringWidth(text, "Verdana", 10)
-        c.drawString(box_x_left, box_bottom_pos, text)
-        c.line(box_x_left - 5, box_bottom_pos+12,
-               box_x_left + tw + 5, box_bottom_pos+12)
+        c.drawString(box_x_left, box_bottom_pos + 12, text)
+        c.line(box_x_left - 5, box_bottom_pos+24,
+               box_x_left + tw + 5, box_bottom_pos+24)
 
         c.save()
 
@@ -480,6 +522,9 @@ def mainApp(state):
         # convert the font so it is compatible
         pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf'))
         pdfmetrics.registerFont(TTFont('Verdana', 'Verdana.ttf'))
+
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(BASE_DIR, "Logo.jpg")
 
         # Page information
         page_width = 595
@@ -511,81 +556,82 @@ def mainApp(state):
         blue30transparent = Color(0, 0, 100, alpha=0.3)
         goodColor = HexColor("#2b92c5")
 
+        c.drawImage(image_path, 45, 770,
+                    width=60, height=67)
+
         # sets fill color like orange
 
         y = page_height - margin*10
         x = 4*margin
 
+        # sets fill color like orange
+        c.line(45, 750, 550, 750)
+        c.line(45, 690, 550, 690)
+        c.line(45, 750, 45, 690)
+        c.line(550, 750, 550, 690)
+
         # Invoice information
-        c.setFont('Verdana', 20)
-        text = 'Biocin Bangladesh'
-        # text_width = stringWidth(text, 'Arial', 10)
-        c.drawString(4*margin, page_height - margin*6, text)
+        c.setFont('Verdana', 24)
+        text = 'Biochin Bangladesh'
+        text_width = stringWidth(text, 'Verdana', 24)
+        c.drawString(int((595 - text_width)/2), 813, text)
 
-        c.setFont('Verdana', 20)
+        c.setFont('Verdana', 16)
         text = 'DUE INVOICE'
-        # text_width = stringWidth(text, 'Arial', 10)
-        c.drawString(4*margin + 280, page_height - margin*6, text)
+        text_width = stringWidth(text, 'Verdana', 16)
+        c.drawString(int((595 - text_width)/2), 756, text)
 
+        y = page_height - margin*6
+        x = 4*margin
         # x2 = x + 30
 
         # Invoice number
-        c.setFont('Verdana', 10)
-        text = 'Address: '
-        c.drawString(x, y, text)
-        tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "RP Gate, Rajendrapur, Gazipur, Dhaka")
+        c.setFont('Verdana', 9)
+        text = "RP Gate, Rajendrapur, Gazipur, Dhaka"
+        tw = stringWidth(text, 'Verdana', 9)
+        c.drawString(int((595 - tw)/2), 795,
+                     text)
 
-        text = 'Invoice Date: '
-        c.drawString(x + 280, y, text)
-        tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, i_d)
         y -= margin
 
-        text = 'Phone: '
-        c.drawString(x, y, text)
+        text = "Mob: 01716-573618, Email: biochinbanglades@gmail.com"
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "01716-573618")
+        c.drawString(int((595 - tw)/2) + 13, 780,
+                     text)
 
-        text = 'Customer Code: '
-        c.drawString(x + 280, y, text)
+        text = f'Invoice Date: {i_d}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_c)
+        c.drawString(x + 270, 702, text)
         y -= margin
 
-        text = 'Email: '
-        c.drawString(x, y, text)
+        text = f'PC: {c_c}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + tw, y, "biocinbangladesh@gmail.com")
-
-        text = 'Customer Name: '
-        c.drawString(x + 280, y, text)
-        tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_n)
+        c.drawString(55, 717, text)
         y -= margin
 
-        text = 'Customer Phone: '
-        c.drawString(x + 280, y, text)
+        text = f'PN: {c_n}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_p)
+        c.drawString(55, 732, text)
         y -= margin
 
-        text = 'Customer Address: '
-        c.drawString(x + 280, y, text)
+        text = f'Phone: {c_p}'
         tw = stringWidth(text, 'Verdana', 10)
-        c.drawString(x + 280 + tw, y, c_a)
+        c.drawString(x + 270, 717, text)
         y -= margin
-        y -= margin*2
+
+        text = f'PA: {c_a}'
+        tw = stringWidth(text, 'Verdana', 10)
+        c.drawString(x + 270, 732, text)
 
         box_bottom = y - 400
 
         c.setFillColor(HexColor("#EAEAEC"))
-        c.rect(x, y - 400, 490, 400, fill=True, stroke=True)
+        c.rect(x, y - 400, 490, 360, fill=True, stroke=True)
 
         c.setFont('Verdana', 15)
         c.setFillColor(colors.black)
 
-        y -= 80
+        y -= 100
         t_s_text = "Previous Due: "
         tw = stringWidth(t_s_text, 'Arial', 15)
         c.drawString(x + 100, y-40, t_s_text)
@@ -604,7 +650,7 @@ def mainApp(state):
         t_text_width = stringWidth(t_text, 'Arial', 15)
         c.drawString(x + 350, y-40, t_text)
 
-        y -= 25
+        y -= 50
         c.line(x + 50, y-27, x + 430, y-27)
         y -= 10
 
@@ -1963,6 +2009,19 @@ def mainApp(state):
                                                 conn = sqlite3.connect(db_path)
                                                 cursor = conn.cursor()
 
+                                                cursor.execute(
+                                                    f"select sum(due_amount) from sales where customer_id={customer_id}")
+                                                previous_due_tuple_lsit = cursor.fetchall()
+                                                previous_due = "0.0"
+                                                if previous_due_tuple_lsit[0][0] != None:
+                                                    previous_due = "{:.2f}".format(
+                                                        previous_due_tuple_lsit[0][0])
+
+                                                conn.commit()
+
+                                                total_payable = "{:.2f}".format(
+                                                    float(due_amount) + float(previous_due))
+
                                                 cursor.execute("INSERT INTO sales(sale_code, customer_id, sale_amount, paid_amount, due_amount) VALUES (?,?,?,?,?)",
                                                                (int(sale_code), int(customer_id),
                                                                 float(sale_amount), float(paid_amount), float(due_amount)))
@@ -2097,7 +2156,7 @@ def mainApp(state):
                                                         sales_product_information = cursor.fetchall()
 
                                                         create_invoice(
-                                                            sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), discount_percentage_applied, discount_amount, float(sale_amount), float(paid_amount), float(due_amount))
+                                                            sale_code, sale_date, customer_info_tuple_list[0][1], f"{customer_info_tuple_list[0][2]} {customer_info_tuple_list[0][3]}", customer_info_tuple_list[0][5], customer_info_tuple_list[0][4], sales_product_information, float(totalAmount_trv_home), discount_percentage_applied, discount_amount, float(sale_amount), float(paid_amount), float(due_amount), previous_due, total_payable)
 
                                                         deleteAll()
                                                         netAmountEntry_home.config(
@@ -2140,7 +2199,7 @@ def mainApp(state):
                                                     title="Customer Error", message="Please insert customer Information.")
                                                 printButton_home = defaultButton(
                                                     productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, state="disabled")
-
+                                                print(identifier)
                                         saveButton_home = defaultButton(
                                             productsListFrame_home, "Save Invoice", 9, 0, W+E, command=saveInvoice)
 
@@ -3348,7 +3407,7 @@ def mainApp(state):
         about_details_textField.grid(row=0, column=0, padx=20, pady=20)
         timeZone = pytz.timezone("asia/dhaka")
         x = datetime.now(timeZone)
-        details = f"This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you.\n\nCurrently this software is owned by Biocin Bangladesh Company. \nIt cannot be used for any other companies or personal use. \n\nCopyright © {x.year} LazyProgs"
+        details = f"This software is called Business Monitoring App. Which is built by Shakib.\nThe software will help small businesses to monitor things including customer \ninformation, product information, stock information and due information. \nYou can easily use this software to generate invoices for sales and dues paid. \nThis software will also calculate your gross profit or loss for a particular \nmonth which you can search and compare your monthly profits or loss. \nYou can also generate excel sheet for customers, products or sales items. \nThis is really great for a small business. Thank you.\n\nCurrently this software is owned by Biochin Bangladesh. \nIt cannot be used for any other companies or personal use. \n\nCopyright © {x.year} LazyProgs"
         about_details_textField.insert("end", details)
         about_details_textField.config(state=DISABLED)
 

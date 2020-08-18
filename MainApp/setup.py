@@ -7,6 +7,7 @@ from cx_Freeze import *
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 icon = os.path.join(BASE_DIR, "bma_icon.ico")
 db_path = os.path.join(BASE_DIR, "main.db")
+image_path = os.path.join(BASE_DIR, "Logo.jpg")
 
 
 # GUI applications require a different base on Windows (the default is for a
@@ -38,14 +39,14 @@ msi_data = {"Shortcut": shortcut_table}
 
 
 build_exe_options = {"packages": [
-    "os", "tkinter", "pytz", "reportlab", "xlsxwriter"], "include_files": [icon, db_path]}
+    "os", "tkinter", "pytz", "reportlab", "xlsxwriter", "num2words"], "include_files": [icon, db_path, image_path]}
 
 bdist_msi_options = {'data': msi_data,
                      'initial_target_dir': 'C:\\BMA', 'install_icon': icon}
 
 
 setup(name="Business Monitoring App",
-      version="1.0.9",
+      version="1.1.1",
       author="LazyProgs [Shakib]",
       author_email="kmshahriahhossain@gmail.com",
       description="Copyright © 2020 LazyProgs",

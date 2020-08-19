@@ -2391,6 +2391,16 @@ def mainApp(state):
             stockList_frame_stocks, "Total items in the list", 2, 0, entryWidth)
         trv_total_entry.insert(0, f"{len(stocks_tuple_list)}")
         trv_total_entry.config(state="disabled")
+
+        total_price_of_Stock = 0.0
+        if stocks_tuple_list != []:
+            for i in range(0, len(stocks_tuple_list)):
+                total_price_of_Stock += float(stocks_tuple_list[i][3])
+
+        trv_total_price_entry = defaultEntry(
+            stockList_frame_stocks, "Total Price Of Stocks", 3, 0, entryWidth)
+        trv_total_price_entry.insert(0, "{:.2f}".format(total_price_of_Stock))
+        trv_total_price_entry.config(state="disabled")
         conn.commit()
         conn.close()
 
@@ -2607,7 +2617,7 @@ def mainApp(state):
     updateStockAdd()
 
     stockSearch_frame_stocks = defaultFrame(
-        stockFrame, "Search by product name", 1, 0)
+        stockFrame, "Search by product name or Date", 1, 0)
 
     searchStocksEntry_stocks = defaultEntry(
         stockSearch_frame_stocks, "Search Stock", 0, 0, entryWidth)
@@ -2876,15 +2886,15 @@ def mainApp(state):
                 customer_phone_selected_entry.insert(
                     0, customer_phone_selected)
                 customer_total_sales_selected_entry.insert(
-                    0, customer_total_sales_selected)
+                    0, "{:.2f}".format(customer_total_sales_selected))
                 customer_total_paid_selected_entry.insert(
                     0, customer_total_paid_selected)
                 customer_total_due_occured_selected_entry.insert(
-                    0, customer_total_due_selected)
+                    0, "{:.2f}".format(customer_total_due_selected))
                 customer_total_due_paid_selected_entry.insert(
                     0, customer_total_due_paid_selected)
                 customer_total_additional_due_selected_entry.insert(
-                    0, customer_total_additional_due)
+                    0, "{:.2f}".format(customer_total_additional_due))
 
                 customer_code_selected_entry.config(state="disabled")
                 customer_name_selected_entry.config(state="disabled")

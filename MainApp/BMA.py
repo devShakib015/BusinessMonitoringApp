@@ -796,8 +796,7 @@ def mainApp(state):
 
                 total_cost_price = 0.0
                 if quantity_sold_tuple_list != []:
-                    print(quantity_sold_tuple_list)
-                    print(cost_price_tuple_list)
+                    
                     for i in range(len(quantity_sold_tuple_list)):
                         total_cost_price += float(cost_price_tuple_list[i][0]) * float(
                             quantity_sold_tuple_list[i][0])
@@ -2014,10 +2013,22 @@ def mainApp(state):
                                                 cursor.execute(
                                                     f"select sum(due_amount) from sales where customer_id={customer_id}")
                                                 previous_due_tuple_lsit = cursor.fetchall()
-                                                previous_due = "0.0"
+                                                previous_due_total = "0.0"
                                                 if previous_due_tuple_lsit[0][0] != None:
-                                                    previous_due = "{:.2f}".format(
+                                                    previous_due_total = "{:.2f}".format(
                                                         previous_due_tuple_lsit[0][0])
+                                                
+
+
+                                                conn.commit()
+
+                                                cursor.execute(f"select sum(amount) from duesPaid where customer_id={customer_id}")
+                                                paid_due_tuple_list = cursor.fetchall()
+                                                paid_due_total = "0.0"
+                                                if paid_due_tuple_list[0][0] != None:
+                                                    paid_due_total = "{:.2f}".format(paid_due_tuple_list[0][0])
+
+                                                previous_due = "{:.2f}".format(float(previous_due_total) - float(paid_due_total))
 
                                                 conn.commit()
 
@@ -2201,7 +2212,7 @@ def mainApp(state):
                                                     title="Customer Error", message="Please insert customer Information.")
                                                 printButton_home = defaultButton(
                                                     productsListFrame_home, "Generate PDF Invoice", 9, 1, W+E, state="disabled")
-                                                print(identifier)
+                                                
                                         saveButton_home = defaultButton(
                                             productsListFrame_home, "Save Invoice", 9, 0, W+E, command=saveInvoice)
 

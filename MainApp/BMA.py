@@ -183,7 +183,7 @@ def mainApp(state):
     notebook.add(daily_stock_Frame, text="Sales Info",
                  state=state)
     notebook.add(statsFrame, text="Statistics",
-                 state=state)
+                 state="hidden")
     notebook.add(aboutFrame, text="About")
 
     # notebook.place(relx=0, rely=0, relheight=1, relwidth=1)

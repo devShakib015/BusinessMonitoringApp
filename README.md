@@ -8,7 +8,7 @@ A desktop business management application built with Python and Tkinter — one 
 
 | Login Screen | Main Dashboard |
 |---|---|
-| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) |
+| ![Login](screenshots/login.png) | ![Dashboard](screenshots/home.png) |
 
 ---
 

@@ -1,0 +1,86 @@
+name: Build Windows release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build installer and portable exe
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Read the app version
+        id: version
+        shell: bash
+        run: echo "value=$(python -c 'from app import config; print(config.APP_VERSION)')" >> "$GITHUB_OUTPUT"
+
+      - name: Run the test suite
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest tests -q
+
+      - name: Refresh icon and version resource
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python packaging/make_icon.py
+          python packaging/make_version.py
+
+      - name: Build with PyInstaller
+        run: pyinstaller packaging/shopdesk.spec --noconfirm --clean
+
+      - name: Self-test the built executables
+        run: |
+          foreach ($exe in @("dist\ShopDesk\ShopDesk.exe", "dist\ShopDesk-portable.exe")) {
+            if (-not (Test-Path $exe)) { throw "$exe was not built" }
+            $run = Start-Process -FilePath $exe -ArgumentList "--selftest" -Wait -PassThru
+            if ($run.ExitCode -ne 0) { throw "$exe failed its self-test (exit $($run.ExitCode))" }
+            Write-Host "$exe passed"
+          }
+
+      - name: Build the installer
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=${{ steps.version.outputs.value }} packaging\installer.iss
+
+      - name: Name the portable build
+        shell: bash
+        run: mv "dist/ShopDesk-portable.exe" "dist/installer/ShopDesk-${{ steps.version.outputs.value }}-portable.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shopdesk-windows
+          path: dist/installer/*.exe
+          if-no-files-found: error
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/installer/*.exe
+          generate_release_notes: true
+          body: |
+            ### Download
+
+            - **ShopDesk-${{ steps.version.outputs.value }}-Setup.exe** — installer, adds a Start-menu entry and updates cleanly.
+            - **ShopDesk-${{ steps.version.outputs.value }}-portable.exe** — single file, runs from a USB stick. Put a file named `portable.txt` beside it to keep the shop data next to the executable.
+
+            Windows SmartScreen will warn about an unsigned application: choose **More info → Run anyway**.
+
+            Your shop data lives in `%LOCALAPPDATA%\ShopDesk` and is never uploaded anywhere.

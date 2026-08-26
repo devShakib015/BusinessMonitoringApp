@@ -23,6 +23,16 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      # Qt links these even under the offscreen platform; without them the
+      # interface tests are skipped instead of run.
+      - name: Install Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libglx0 libopengl0 libxkbcommon0 \
+            libdbus-1-3 libfontconfig1 fonts-dejavu-core
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

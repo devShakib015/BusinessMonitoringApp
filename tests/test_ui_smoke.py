@@ -12,9 +12,15 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-pytest.importorskip("PySide6")
-
-from PySide6.QtWidgets import QApplication  # noqa: E402
+# A machine without Qt's system libraries imports the PySide6 package fine and
+# then fails on the first module that loads them, with a plain ImportError --
+# which importorskip does not treat as a missing module.  Skip explicitly so
+# the rest of the suite still runs there.
+try:
+    from PySide6.QtWidgets import QApplication
+except ImportError as error:  # pragma: no cover - depends on the machine
+    pytest.skip(f"Qt runtime libraries are not available: {error}",
+                allow_module_level=True)
 
 from app.core.money import parse_amount  # noqa: E402
 from app.core.quantity import ONE, parse_qty  # noqa: E402

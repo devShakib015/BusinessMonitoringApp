@@ -1,126 +1,195 @@
-# Business Monitoring App
+<div align="center">
 
-A desktop business management application built with Python and Tkinter — one of my first real projects, written while I was actively learning to code.
+# ShopDesk
+
+**A point-of-sale application for small shops.** Free, offline, and yours to download.
+
+[![Tests](https://github.com/devShakib015/BusinessMonitoringApp/actions/workflows/tests.yml/badge.svg)](https://github.com/devShakib015/BusinessMonitoringApp/actions/workflows/tests.yml)
+[![Release](https://github.com/devShakib015/BusinessMonitoringApp/actions/workflows/release.yml/badge.svg)](https://github.com/devShakib015/BusinessMonitoringApp/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+
+![The sell screen](screenshots/sell.png)
+
+</div>
+
+---
+
+## Download
+
+Grab the latest build from the [**Releases**](https://github.com/devShakib015/BusinessMonitoringApp/releases) page:
+
+| File | What it is |
+|---|---|
+| `ShopDesk-x.y.z-Setup.exe` | Windows installer. Adds a Start-menu entry and uninstalls cleanly. |
+| `ShopDesk-x.y.z-portable.exe` | One file. Runs from a USB stick — put a `portable.txt` next to it to keep the shop data beside the executable. |
+
+Windows SmartScreen will warn about an unsigned application; choose **More info → Run anyway**. There is no account to create, nothing to activate, and no internet connection required. Your shop's data is a single SQLite file in `%LOCALAPPDATA%\ShopDesk` that never leaves the computer.
+
+On macOS and Linux, [run it from source](#running-from-source).
+
+---
+
+## What it does
+
+**At the counter**
+- Scan a barcode or type a few letters — matches appear as you type, `Enter` adds the top one
+- Type `3*cola` to add three of something at once
+- Cash, card, mobile money or bank transfer, with change worked out for you
+- Quick-cash buttons (`Exact`, next round number up) so the change is one click
+- Hold a sale and pick it up later when a customer goes back for the milk they forgot
+- One-off lines for things that aren't in the catalogue — a delivery charge, a photocopy
+- Whole-sale or per-line discounts, spread across lines so tax and refunds stay correct
+- Keyboard-first: `F1` search · `F2` customer · `F3` discount · `F9` charge · `Del` remove line
+
+**Money and stock**
+- Products with barcode, SKU, category, cost and selling price, and a low-stock level
+- Sell by the piece, the kilo or the litre — `1.5 kg` is a real quantity
+- Stock is a ledger, not a number: every unit that moved has a row saying why
+- Receive deliveries, run a stock count, write off damage
+- Returns that put stock back and refund in cash or credit the customer's account
+- Void a sale, with a reason, and the stock goes back on the shelf
+
+**Customers and credit**
+- Walk-in by default — attaching a customer is optional, never required
+- Put a sale on the book, collect against the balance later, set a credit limit per customer
+- A statement for each customer: what they bought, what they paid, what's left
+
+**Paperwork**
+- Thermal receipts on 80mm or 58mm rolls, printed through any printer Windows knows about
+- A4 PDF invoices with your logo, for customers who need a document
+- Every list exports to Excel
+
+**Running the shop**
+- A dashboard of net sales, gross profit, best sellers, and how people paid
+- Day close: what the till should hold, against what you counted
+- Low stock, unpaid balances and lines that haven't sold in a month, surfaced without asking
+- Admin and cashier roles — cashiers can sell but can't change prices or see profit
+- One-click backups, and restore from any of them
+- Light and dark, six accent colours, twenty currencies, tax on or off
 
 ---
 
 ## Screenshots
 
-| Login Screen | Main Dashboard |
+| | |
 |---|---|
-| ![Login](screenshots/login.png) | ![Dashboard](screenshots/home.png) |
+| ![Search](screenshots/sell-search.png) **Find anything by typing** | ![Reports](screenshots/reports.png) **Know how the shop is doing** |
+| ![Products](screenshots/products.png) **The catalogue** | ![Stock](screenshots/stock.png) **Stock, with its history** |
+| ![Credit book](screenshots/credit-book.png) **Who owes what** | ![Sales](screenshots/sales.png) **Every sale, with its receipt** |
+| ![Setup](screenshots/setup.png) **Three questions to get started** | ![Dark mode](screenshots/dark-mode.png) **Dark mode** |
 
 ---
 
-## What It Does
-
-The Business Monitoring App is a full-featured desktop tool designed to manage the day-to-day operations of a small business. It covers the complete product-to-invoice workflow in a single offline application:
-
-- **Create Invoices** — Add products and customers to an invoice, apply discounts, record payments, and generate a printable PDF invoice
-- **Customer Management** — Add and track customers with code, name, phone, and address
-- **Due Payment Tracking** — Monitor outstanding balances per customer
-- **Sales Records** — View and audit past sales transactions
-- **Product Management** — Add products with weight and pricing details
-- **Stock Control** — Add stock and monitor live availability
-- **Product & Stock Info** — Browse full inventory with current stock levels
-- **Statistics** — Business overview with aggregated numbers
-- **Role-Based Access** — Separate Admin and Employee login modes with different permission levels
-- **PDF Invoice Generation** — Export invoices as print-ready PDF documents
-- **Excel Export** — Export data to `.xlsx` spreadsheets
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Language | Python 3 |
-| GUI Framework | Tkinter + ttk |
-| Database | SQLite 3 (via `sqlite3` stdlib) |
-| PDF Generation | ReportLab |
-| Excel Export | XlsxWriter |
-| Number-to-Words | num2words |
-| Timezone Handling | pytz |
-
-No web framework, no external UI library — everything is built on Python's standard library GUI toolkit.
-
----
-
-## Project Structure
+## How a sale actually goes
 
 ```
-BusinessMonitoringApp/
-├── run.py                  # Entry point
-├── requirements.txt
-├── assets/                 # DB file, app icon, logo
-└── app/
-    ├── config.py           # Paths, brand constants
-    ├── database/
-    │   └── connection.py   # SQLite context manager
-    ├── models/             # Data access layer (product, customer, sale, stock, due)
-    ├── ui/
-    │   ├── login.py        # Login & super-admin registration window
-    │   ├── app.py          # Main application window + tab layout
-    │   ├── controller.py   # UI event logic
-    │   ├── styles.py       # All ttk styles & light-mode colour palette
-    │   ├── widgets.py      # Reusable widget factory helpers
-    │   └── views/          # One file per tab (home, customer, product, stock, sale, …)
-    └── utils/
-        ├── invoice.py      # PDF invoice generation
-        └── excel.py        # Excel export
+Scan a barcode                      line added, quantity merged if it repeats
+Type "milk", press Enter            top match added
+Press F2, pick a customer           optional — walk-in is the default
+Press F3, type 10                   10% off, split across the lines
+Type what they handed you           change appears as you type
+Press F9                            sale saved, stock moved, receipt offered
 ```
+
+A cash sale for a walk-in is a scan and one key.
 
 ---
 
-## Getting Started
+## Running from source
 
-**Requirements:** Python 3.10+ with Tk support.
-
-> On macOS, install Tk via Homebrew if needed:
-> ```bash
-> brew install python-tk
-> ```
+Python 3.10 or newer.
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/devshakib/BusinessMonitoringApp.git
+git clone https://github.com/devShakib015/BusinessMonitoringApp.git
 cd BusinessMonitoringApp
 
-# 2. Create and activate a virtual environment
 python3 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Run the app
 python run.py
 ```
 
-On first launch, the app will prompt you to create a **Super Admin** account before the login screen appears.
+On first launch a three-step wizard asks for the shop name, the currency, and an owner account. Tick **fill the shop with sample data** and you get a month of example trading to click around in — you can erase it later from **Settings → Data and backups**.
+
+```bash
+python run.py --selftest   # headless check: drives a whole sale and renders a receipt
+```
 
 ---
 
-## What I Learned Building This
+## How it is built
 
-This project was built while I was in the early stages of learning programming. Here's what it reflects:
+```
+run.py                  launch, or --selftest
+app/
+  config.py             version, and where data lives on each platform
+  core/                 db + migrations, settings, money, quantity, passwords, clock
+  repo/                 all the SQL: products, stock, customers, sales, payments, reports
+  services/             cart, checkout, returns, dues, backups, held sales, sample data
+  printing/             thermal receipts (Qt) and A4 PDF invoices (ReportLab)
+  export/               Excel
+  ui/                   PySide6: theme, icons, main window, pages, dialogs, widgets
+tests/                  81 tests: money, cart, checkout, returns, data — and every screen
+packaging/              PyInstaller spec, Inno Setup script, icon and version generators
+```
 
-**Python fundamentals** — variables, functions, classes, modules, file I/O, exception handling, and working with the standard library across a non-trivial codebase.
+Roughly 8,900 lines. The UI is a third of it; the rules a shop cares about live under
+`core/`, `repo/` and `services/`, where they can be tested without opening a window.
 
-**Object-Oriented Programming** — the entire app is structured around classes; each view, model, and utility is its own encapsulated unit.
+**A few decisions worth knowing about:**
 
-**Database design** — designed and queried a relational SQLite schema from scratch, including joins, aggregations, and parameterised statements to avoid SQL injection.
+- **Money is never a float.** Every amount is an integer number of minor units. `0.1 + 0.2` is not `0.3`, and a till that is a paisa out a hundred times a day is a till nobody trusts. Discounts spread across lines are allocated so the parts add up to exactly the whole.
+- **Stock is a ledger.** There is no `quantity` column on a product; the level is the sum of its movements, each with a reason and a link back to the sale or return that caused it. That turns "why is this wrong?" into a question with an answer.
+- **A sale is one transaction.** The invoice number, the header, the lines, the payment and the stock movements all land together or not at all.
+- **The database is built on first run**, not shipped in the repository. A fresh download starts with an empty till and no stranger's data.
+- **Passwords are salted PBKDF2-SHA256 digests**, so copying the database file does not hand over the owner's password.
+- **Your data stays put.** It lives outside the installation folder, so it survives updates, and nothing is ever uploaded anywhere.
 
-**Desktop GUI development** — built a fully functional multi-tab GUI application using Tkinter and ttk, including custom styles, responsive layouts, treeviews, and themed widgets — without any third-party UI framework.
+### Tests
 
-**Software architecture** — refactored a 3 500-line monolith into a clean MVC-style structure with separated models, views, UI infrastructure, and utilities spread across 30+ files.
+```bash
+pip install -r requirements-dev.txt
+pytest tests -v
+```
 
-**PDF & spreadsheet generation** — programmatically generated print-ready PDF invoices using ReportLab and Excel reports using XlsxWriter.
+The suite covers the parts where being wrong costs a shop money: rounding, discount
+allocation, inclusive and exclusive tax, stock movement, credit limits, partial
+returns, refunds against an account, and that a sale which fails leaves nothing behind.
 
-**Practical problem solving** — handled platform-specific quirks (macOS Tkinter rendering), timezone-aware date handling, role-based access control, and real-world business logic like discount calculation and due payment tracking.
+It also builds every screen and dialog against a real database on Qt's offscreen
+platform, which is what catches a page that breaks on an empty table or a dialog
+that has drifted from the code behind it.
+
+### Building the Windows release
+
+Pushing a `v*` tag builds and publishes automatically. To do it by hand on Windows:
+
+```bash
+pip install -r requirements-dev.txt
+python packaging/make_icon.py
+python packaging/make_version.py
+pyinstaller packaging/shopdesk.spec --noconfirm --clean
+iscc packaging\installer.iss /DAppVersion=2.0.0
+```
 
 ---
 
-## License
+## History
 
-[MIT](LICENSE)
+This repository started as *Business Monitoring App* — a Tkinter program written for one
+particular shop while I was learning to program, with the shop's own details compiled
+into the source and its database committed to git. Version 2 keeps the idea and the
+domain, and rebuilds the rest: a PySide6 interface, a real schema with migrations,
+integer money, a stock ledger, returns, roles, backups, tests, and a Windows build
+anyone can download.
+
+The original Tkinter version is still in the history, at
+[`b95a81f`](https://github.com/devShakib015/BusinessMonitoringApp/tree/b95a81f).
+
+---
+
+## Licence
+
+[MIT](LICENSE) — use it, sell with it, change it.

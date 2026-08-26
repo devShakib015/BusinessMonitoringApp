@@ -32,6 +32,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!packaging/shopdesk.spec
 
 # Installer logs
 pip-log.txt
@@ -123,3 +124,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ShopDesk
+# The database is created on first run and belongs to the shop, not the repo.
+*.db
+*.db-wal
+*.db-shm
+data/
+.DS_Store

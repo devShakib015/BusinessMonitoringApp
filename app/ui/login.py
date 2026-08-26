@@ -1,298 +1,316 @@
-from tkinter import *
-from tkinter import ttk, messagebox
+"""Signing in, and the first-run setup for a brand new shop."""
 
-import pytz
-from datetime import datetime
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
+                               QLineEdit, QStackedWidget, QWidget)
 
-from app.config import ICON_PATH
-from app.database.connection import get_db
+from app import config
+from app.core import settings
+from app.core.security import Session, password_problem
+from app.repo import users as user_repo
+from app.services import demo
+from app.ui import icons, theme
+from app.ui.pages.settings_page import CURRENCIES
+from app.ui.widgets.common import Card, button, hbox, hint, label, vbox
 
-# ── Light-mode palette (mirrors styles.py) ────────────────────────────────────
-_BG       = "#F5F7FA"
-_ACCENT   = "#E63946"
-_BTN_FG   = "#FFFFFF"
-_LABEL_FG = "#2D2D2D"
-_CARD_BG  = "#FFFFFF"
 
-
-class LoginWindow:
-    """
-    Entry-point window.
-
-    Flow
-    ────
-    1. If the ``account`` table is empty  →  show **SuperAdminRegisterPage**
-       which, on successful registration, transitions to the login page.
-    2. Otherwise show the normal **login** page:
-       - Employee login  →  app in restricted mode ("hidden").
-       - Admin login     →  validates credentials, opens app in full mode ("normal").
-    """
+class LoginDialog(QDialog):
+    """Username and password, on a centred card."""
 
     def __init__(self):
-        self._window = Tk()
-        self._window.title("Business Monitoring App")
-        self._window.configure(bg=_BG)
-        self._window.resizable(True, True)
-        try:
-            self._window.iconbitmap(ICON_PATH)
-        except Exception:
-            pass
+        super().__init__()
+        self.session: Session | None = None
+        self.setWindowTitle(f"Sign in — {config.APP_NAME}")
+        self.setWindowIcon(icons.app_icon())
+        self.setFixedSize(420, 470)
+        self.setStyleSheet(f"QDialog {{ background: {theme.hex_of('bg')}; }}")
 
-        # Center window
-        w, h = 480, 520
-        sw = self._window.winfo_screenwidth()
-        sh = self._window.winfo_screenheight()
-        self._window.geometry(f"{w}x{h}+{(sw - w)//2}+{(sh - h)//2}")
+        outer = vbox(self, (36, 34, 36, 28), 16)
 
-        self._setup_styles()
+        brand = QWidget()
+        brand_layout = vbox(brand, spacing=4)
+        mark = label("")
+        mark.setPixmap(icons.app_icon().pixmap(56, 56))
+        mark.setAlignment(Qt.AlignCenter)
+        brand_layout.addWidget(mark)
+        title = label(settings.get("shop.name"), "PageTitle")
+        title.setAlignment(Qt.AlignCenter)
+        title.setWordWrap(True)
+        brand_layout.addWidget(title)
+        tagline = label(f"{config.APP_NAME} · {config.APP_TAGLINE}", "PageSubtitle")
+        tagline.setAlignment(Qt.AlignCenter)
+        brand_layout.addWidget(tagline)
+        outer.addWidget(brand)
 
-        if self._has_admin():
-            self._show_login_page()
-        else:
-            self._show_register_page()
+        card = Card(padding=22, spacing=12)
+        self._username = QLineEdit()
+        self._username.setPlaceholderText("Username")
+        self._password = QLineEdit()
+        self._password.setPlaceholderText("Password")
+        self._password.setEchoMode(QLineEdit.Password)
+        self._password.returnPressed.connect(self._sign_in)
+        self._username.returnPressed.connect(self._password.setFocus)
 
-    # ── Style setup ───────────────────────────────────────────────────────────
+        self._remember = QCheckBox("Remember this username")
+        self._remember.setChecked(bool(settings.get("app.last_user", "")))
+        self._username.setText(settings.get("app.last_user", ""))
 
-    @staticmethod
-    def _setup_styles() -> None:
-        """Apply clam-based ttk styles for the login window."""
-        s = ttk.Style()
-        try:
-            s.theme_use("clam")
-        except Exception:
-            pass
-        s.configure("TFrame",  background=_BG)
-        s.configure("TLabel",  background=_BG, foreground=_LABEL_FG)
-        s.configure("TEntry",
-                    fieldbackground="#FFFFFF",
-                    foreground=_LABEL_FG,
-                    borderwidth=1,
-                    relief="solid",
-                    padding=[4, 2])
-        s.map("TEntry",
-              fieldbackground=[("disabled", "#F0F0F0")],
-              foreground=[("disabled", "#888888")])
-        # Red accent button (register / admin login)
-        s.configure("Accent.TButton",
-                    font=("Verdana", 10, "bold"),
-                    background=_ACCENT,
-                    foreground=_BTN_FG,
-                    borderwidth=0,
-                    relief="flat",
-                    padding=[8, 8])
-        s.map("Accent.TButton",
-              background=[("active", "#C0303C"), ("pressed", "#A02030")],
-              foreground=[("active", _BTN_FG), ("pressed", _BTN_FG)])
-        # Blue button (employee access)
-        s.configure("Blue.TButton",
-                    font=("Verdana", 10, "bold"),
-                    background="#4A90D9",
-                    foreground=_BTN_FG,
-                    borderwidth=0,
-                    relief="flat",
-                    padding=[8, 8])
-        s.map("Blue.TButton",
-              background=[("active", "#3B7DC8"), ("pressed", "#2D6AB0")],
-              foreground=[("active", _BTN_FG), ("pressed", _BTN_FG)])
+        self._error = label("")
+        self._error.setWordWrap(True)
+        self._error.setStyleSheet(
+            f"color: {theme.hex_of('danger')}; background: {theme.hex_of('danger_soft')};"
+            f"border-radius: 8px; padding: 8px 10px; font-weight: 600;")
+        self._error.hide()
 
-    # ── Admin existence check ─────────────────────────────────────────────────
+        card.body.addWidget(label("Sign in", "SectionTitle"))
+        card.body.addWidget(self._username)
+        card.body.addWidget(self._password)
+        card.body.addWidget(self._remember)
+        card.body.addWidget(self._error)
+        card.body.addWidget(button("Sign in", "primary", on_click=self._sign_in))
+        outer.addWidget(card)
 
-    @staticmethod
-    def _has_admin() -> bool:
-        with get_db() as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT COUNT(*) FROM account")
-            return cur.fetchone()[0] > 0
+        outer.addStretch(1)
+        footer = label(f"v{config.APP_VERSION}  ·  data stays on this computer",
+                       "Faint")
+        footer.setAlignment(Qt.AlignCenter)
+        outer.addWidget(footer)
 
-    # ── Page management ───────────────────────────────────────────────────────
+        (self._password if self._username.text() else self._username).setFocus()
 
-    def _clear_window(self):
-        for widget in self._window.winfo_children():
-            widget.destroy()
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # REGISTER PAGE
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def _show_register_page(self):
-        self._clear_window()
-        self._window.title("Setup Super Admin — Business Monitoring App")
-
-        outer = Frame(self._window, bg=_BG)
-        outer.pack(fill=BOTH, expand=True, padx=40, pady=30)
-        outer.columnconfigure(0, weight=1)
-
-        # Heading
-        Label(outer, text="Welcome!", font="Verdana 20 bold",
-              fg=_ACCENT, bg=_BG).grid(row=0, column=0, pady=(0, 4), sticky=EW)
-        Label(outer, text="No admin account found.\nPlease create a Super Admin account to get started.",
-              font="Verdana 10", fg=_LABEL_FG, bg=_BG, justify=CENTER).grid(
-              row=1, column=0, pady=(0, 20), sticky=EW)
-
-        # Card
-        card = Frame(outer, bg=_CARD_BG, relief="solid", bd=1)
-        card.grid(row=2, column=0, sticky=EW)
-        card.columnconfigure(1, weight=1)
-
-        _title = Label(card, text="Create Super Admin", font="Verdana 13 bold",
-                       fg=_LABEL_FG, bg=_CARD_BG, anchor=W)
-        _title.grid(row=0, column=0, columnspan=2, padx=20, pady=(18, 12), sticky=EW)
-
-        reg_u = self._field(card, "Username", 1, show="")
-        reg_p = self._field(card, "Password", 2, show="*")
-        reg_c = self._field(card, "Confirm Password", 3, show="*")
-
-        err_lbl = Label(card, text="", font="Verdana 9", fg=_ACCENT, bg=_CARD_BG)
-        err_lbl.grid(row=4, column=0, columnspan=2, padx=20, pady=(0, 4), sticky=W)
-
-        def register():
-            u = reg_u.get().strip()
-            p = reg_p.get()
-            c = reg_c.get()
-
-            if not u:
-                err_lbl.config(text="Username cannot be empty.")
-                return
-            if len(p) < 6:
-                err_lbl.config(text="Password must be at least 6 characters.")
-                return
-            if p != c:
-                err_lbl.config(text="Passwords do not match.")
-                return
-
-            with get_db() as conn:
-                conn.execute("INSERT INTO account(username, password) VALUES (?, ?)", (u, p))
-
-            messagebox.showinfo(
-                "Account Created",
-                f"Super admin '{u}' created successfully!\nYou can now log in.",
-            )
-            self._show_login_page()
-
-        btn = ttk.Button(card, text="Create Account",
-                         style="Accent.TButton",
-                         cursor="hand2", command=register)
-        btn.grid(row=5, column=0, columnspan=2, padx=20, pady=(8, 20), sticky=EW)
-
-        self._footer(outer, 3)
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # LOGIN PAGE
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def _show_login_page(self):
-        self._clear_window()
-        self._window.title("Login — Business Monitoring App")
-
-        outer = Frame(self._window, bg=_BG)
-        outer.pack(fill=BOTH, expand=True, padx=40, pady=30)
-        outer.columnconfigure(0, weight=1)
-
-        # Heading
-        Label(outer, text="Business Monitoring App", font="Verdana 18 bold",
-              fg=_ACCENT, bg=_BG).grid(row=0, column=0, pady=(0, 4), sticky=EW)
-        Label(outer, text="Sign in to continue", font="Verdana 10",
-              fg=_LABEL_FG, bg=_BG).grid(row=1, column=0, pady=(0, 20), sticky=EW)
-
-        # ── Admin card ────────────────────────────────────────────────────────
-        admin_card = Frame(outer, bg=_CARD_BG, relief="solid", bd=1)
-        admin_card.grid(row=2, column=0, sticky=EW)
-        admin_card.columnconfigure(1, weight=1)
-
-        Label(admin_card, text="Admin Login", font="Verdana 12 bold",
-              fg=_LABEL_FG, bg=_CARD_BG, anchor=W).grid(
-              row=0, column=0, columnspan=2, padx=20, pady=(16, 10), sticky=EW)
-
-        self._user_entry = self._field(admin_card, "Username", 1, show="")
-        self._pass_entry = self._field(admin_card, "Password", 2, show="*")
-        # Allow Enter key to submit
-        self._pass_entry.bind("<Return>", lambda _: self._admin_login())
-
-        err_lbl = Label(admin_card, text="", font="Verdana 9", fg=_ACCENT, bg=_CARD_BG)
-        err_lbl.grid(row=3, column=0, columnspan=2, padx=20, pady=(0, 4), sticky=W)
-        self._login_err_lbl = err_lbl
-
-        btn = ttk.Button(admin_card, text="Login as Admin",
-                         style="Accent.TButton",
-                         cursor="hand2", command=self._admin_login)
-        btn.grid(row=4, column=0, columnspan=2, padx=20, pady=(6, 20), sticky=EW)
-
-        # ── Divider ───────────────────────────────────────────────────────────
-        sep = Frame(outer, bg="#E0E0E0", height=1)
-        sep.grid(row=3, column=0, sticky=EW, pady=12)
-
-        # ── Employee card ─────────────────────────────────────────────────────
-        emp_card = Frame(outer, bg=_CARD_BG, relief="solid", bd=1)
-        emp_card.grid(row=4, column=0, sticky=EW)
-        emp_card.columnconfigure(0, weight=1)
-
-        Label(emp_card, text="Employee Access", font="Verdana 12 bold",
-              fg=_LABEL_FG, bg=_CARD_BG, anchor=W).grid(
-              row=0, column=0, padx=20, pady=(16, 4), sticky=EW)
-        Label(emp_card, text="Click below to continue without an admin account.",
-              font="Verdana 9", fg="#666666", bg=_CARD_BG).grid(
-              row=1, column=0, padx=20, pady=(0, 8), sticky=EW)
-
-        emp_btn = ttk.Button(emp_card, text="Continue as Employee",
-                             style="Blue.TButton",
-                             cursor="hand2", command=self._employee_login)
-        emp_btn.grid(row=2, column=0, padx=20, pady=(0, 20), sticky=EW)
-
-        self._footer(outer, 5)
-
-    # ── Widget helpers ────────────────────────────────────────────────────────
-
-    @staticmethod
-    def _field(parent, label: str, row: int, show: str = "") -> ttk.Entry:
-        Label(parent, text=label, font="Verdana 10", fg=_LABEL_FG, bg=_CARD_BG,
-              anchor=W).grid(row=row, column=0, padx=20, pady=(4, 0), sticky=EW,
-                             columnspan=2)
-        entry = ttk.Entry(parent, font="Verdana 10", show=show, justify=LEFT)
-        entry.grid(row=row, column=0, padx=20, pady=(0, 8), sticky=EW, columnspan=2,
-                   ipady=5)
-        return entry
-
-    @staticmethod
-    def _footer(parent, row: int):
-        tz = pytz.timezone("Asia/Dhaka")
-        year = datetime.now(tz).year
-        Label(parent, text=f"© {year} LazyProgs · Business Monitoring App",
-              font="Verdana 8", fg="#999999", bg=_BG).grid(
-              row=row, column=0, pady=(16, 0))
-
-    # ── Login callbacks ───────────────────────────────────────────────────────
-
-    def _admin_login(self) -> None:
-        username = self._user_entry.get().strip()
-        password = self._pass_entry.get()
-
-        with get_db() as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT username, password FROM account LIMIT 1")
-            row = cur.fetchone()
-
-        if row is None:
-            self._show_register_page()
+    def _sign_in(self) -> None:
+        username = self._username.text().strip()
+        password = self._password.text()
+        if not username or not password:
+            self._show("Enter your username and password.")
             return
 
-        stored_user, stored_pass = row
-        if username != stored_user:
-            self._login_err_lbl.config(text="Username is incorrect.")
+        session = user_repo.authenticate(username, password)
+        if session is None:
+            self._show("That username and password do not match an account.")
+            self._password.clear()
+            self._password.setFocus()
             return
-        if password != stored_pass:
-            self._login_err_lbl.config(text="Password is incorrect.")
+
+        settings.set_value("app.last_user", username if self._remember.isChecked() else "")
+        self.session = session
+        self.accept()
+
+    def _show(self, message: str) -> None:
+        self._error.setText(message)
+        self._error.show()
+
+
+class SetupWizard(QDialog):
+    """Three questions, then the shop is open."""
+
+    def __init__(self):
+        super().__init__()
+        self.session: Session | None = None
+        self.setWindowTitle(f"Set up {config.APP_NAME}")
+        self.setWindowIcon(icons.app_icon())
+        self.setFixedSize(560, 600)
+        self.setStyleSheet(f"QDialog {{ background: {theme.hex_of('bg')}; }}")
+
+        outer = vbox(self, (34, 30, 34, 24), 16)
+
+        self._title = label("Welcome", "PageTitle")
+        self._subtitle = label("", "PageSubtitle")
+        self._subtitle.setWordWrap(True)
+        outer.addWidget(self._title)
+        outer.addWidget(self._subtitle)
+
+        self._steps = QStackedWidget()
+        self._steps.addWidget(self._shop_step())
+        self._steps.addWidget(self._money_step())
+        self._steps.addWidget(self._account_step())
+        outer.addWidget(self._steps, 1)
+
+        self._error = label("")
+        self._error.setWordWrap(True)
+        self._error.setStyleSheet(
+            f"color: {theme.hex_of('danger')}; background: {theme.hex_of('danger_soft')};"
+            f"border-radius: 8px; padding: 8px 10px; font-weight: 600;")
+        self._error.hide()
+        outer.addWidget(self._error)
+
+        controls = hbox(spacing=8)
+        self._progress = label("Step 1 of 3", "Faint")
+        controls.addWidget(self._progress)
+        controls.addStretch(1)
+        self._back = button("Back", "ghost", on_click=self._go_back)
+        self._next = button("Continue", "primary", on_click=self._go_next)
+        controls.addWidget(self._back)
+        controls.addWidget(self._next)
+        outer.addLayout(controls)
+
+        self._show_step(0)
+
+    # ── Steps ─────────────────────────────────────────────────────────────────
+
+    def _shop_step(self) -> QWidget:
+        card = Card(padding=22, spacing=12)
+        self._shop_name = QLineEdit()
+        self._shop_name.setPlaceholderText("Rahman General Store")
+        self._shop_address = QLineEdit()
+        self._shop_address.setPlaceholderText("Street, town")
+        self._shop_phone = QLineEdit()
+        self._shop_phone.setPlaceholderText("Phone customers can call")
+
+        card.body.addWidget(label("Shop name", "SectionTitle"))
+        card.body.addWidget(self._shop_name)
+        card.body.addWidget(label("Address", "SectionTitle"))
+        card.body.addWidget(self._shop_address)
+        card.body.addWidget(label("Phone", "SectionTitle"))
+        card.body.addWidget(self._shop_phone)
+        card.body.addWidget(hint(
+            "These print on your receipts and invoices. You can change them "
+            "any time in Settings."))
+        return _wrap(card)
+
+    def _money_step(self) -> QWidget:
+        card = Card(padding=22, spacing=12)
+        self._currency = QComboBox()
+        for code, symbol, decimals in CURRENCIES:
+            self._currency.addItem(f"{code}  —  {symbol}", (code, symbol, decimals))
+
+        self._tax_enabled = QCheckBox("I charge tax on sales")
+        self._tax_label = QLineEdit("VAT")
+        self._tax_rate = QLineEdit("0")
+        self._tax_inclusive = QCheckBox("My shelf prices already include tax")
+
+        card.body.addWidget(label("Currency", "SectionTitle"))
+        card.body.addWidget(self._currency)
+        card.body.addWidget(self._tax_enabled)
+        row = hbox(spacing=12)
+        row.addWidget(self._tax_label, 1)
+        row.addWidget(self._tax_rate, 1)
+        holder = QWidget()
+        holder.setLayout(row)
+        card.body.addWidget(label("Tax name and default rate (%)", "SectionTitle"))
+        card.body.addWidget(holder)
+        card.body.addWidget(self._tax_inclusive)
+        card.body.addWidget(hint(
+            "Leave tax switched off if you do not charge it — nothing about tax "
+            "will appear on the till."))
+        return _wrap(card)
+
+    def _account_step(self) -> QWidget:
+        card = Card(padding=22, spacing=12)
+        self._full_name = QLineEdit()
+        self._full_name.setPlaceholderText("Your name")
+        self._username = QLineEdit()
+        self._username.setPlaceholderText("Username you will sign in with")
+        self._password = QLineEdit()
+        self._password.setEchoMode(QLineEdit.Password)
+        self._password.setPlaceholderText("At least 6 characters")
+        self._confirm = QLineEdit()
+        self._confirm.setEchoMode(QLineEdit.Password)
+        self._confirm.setPlaceholderText("Type it again")
+        self._sample = QCheckBox("Fill the shop with sample data so I can try it out")
+        self._sample.setChecked(True)
+
+        card.body.addWidget(label("Owner account", "SectionTitle"))
+        card.body.addWidget(self._full_name)
+        card.body.addWidget(self._username)
+        card.body.addWidget(self._password)
+        card.body.addWidget(self._confirm)
+        card.body.addWidget(self._sample)
+        card.body.addWidget(hint(
+            "This account can do everything. You can add cashiers later, who can "
+            "sell but cannot change prices or see reports."))
+        return _wrap(card)
+
+    # ── Navigation ────────────────────────────────────────────────────────────
+
+    HEADINGS = [
+        ("Welcome to ShopDesk", "First, tell the app about your shop."),
+        ("Money", "How you price and what you charge on top."),
+        ("Your account", "One last step — an account to sign in with."),
+    ]
+
+    def _show_step(self, index: int) -> None:
+        self._steps.setCurrentIndex(index)
+        title, subtitle = self.HEADINGS[index]
+        self._title.setText(title)
+        self._subtitle.setText(subtitle)
+        self._progress.setText(f"Step {index + 1} of {self._steps.count()}")
+        self._back.setVisible(index > 0)
+        self._next.setText("Finish setup" if index == self._steps.count() - 1
+                           else "Continue")
+        self._error.hide()
+
+    def _go_back(self) -> None:
+        self._show_step(max(0, self._steps.currentIndex() - 1))
+
+    def _go_next(self) -> None:
+        index = self._steps.currentIndex()
+        if index == 0:
+            if not self._shop_name.text().strip():
+                self._show("Give your shop a name.")
+                return
+        elif index == 1:
+            try:
+                float(self._tax_rate.text().strip() or 0)
+            except ValueError:
+                self._show("The tax rate must be a number, for example 15.")
+                return
+
+        if index < self._steps.count() - 1:
+            self._show_step(index + 1)
+            return
+        self._finish()
+
+    def _finish(self) -> None:
+        username = self._username.text().strip()
+        if not username:
+            self._show("Choose a username.")
+            return
+        problem = password_problem(self._password.text(), self._confirm.text())
+        if problem:
+            self._show(problem)
             return
 
-        self._window.destroy()
-        from app.ui.app import assets
-        assets("normal").run()
+        code, symbol, decimals = self._currency.currentData()
+        settings.set_many({
+            "shop.name": self._shop_name.text().strip(),
+            "shop.address": self._shop_address.text().strip(),
+            "shop.phone": self._shop_phone.text().strip(),
+            "currency.code": code,
+            "currency.symbol": symbol,
+            "currency.decimals": decimals,
+            "tax.enabled": int(self._tax_enabled.isChecked()),
+            "tax.label": self._tax_label.text().strip() or "Tax",
+            "tax.rate": self._tax_rate.text().strip() or 0,
+            "tax.inclusive": int(self._tax_inclusive.isChecked()),
+            "app.setup_complete": 1,
+        })
 
-    def _employee_login(self) -> None:
-        self._window.destroy()
-        from app.ui.app import assets
-        assets("hidden").run()
+        user_id = user_repo.create(username, self._password.text(),
+                                   full_name=self._full_name.text().strip(),
+                                   role="admin")
+        if self._sample.isChecked():
+            self._next.setEnabled(False)
+            self._next.setText("Preparing sample data…")
+            self._next.repaint()
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                demo.load(user_id=user_id, days=21)
+            finally:
+                QApplication.restoreOverrideCursor()
 
-    # ── Entry point ───────────────────────────────────────────────────────────
+        self.session = Session(user_id=user_id, username=username,
+                               full_name=self._full_name.text().strip(), role="admin")
+        self.accept()
 
-    def run(self) -> None:
-        self._window.mainloop()
+    def _show(self, message: str) -> None:
+        self._error.setText(message)
+        self._error.show()
+
+
+def _wrap(card: Card) -> QWidget:
+    holder = QWidget()
+    column = vbox(holder, spacing=0)
+    column.addWidget(card)
+    column.addStretch(1)
+    return holder

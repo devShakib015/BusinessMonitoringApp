@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+title: "ShopDesk — an offline point-of-sale for a small shop"
+abstract: >-
+  A free, offline point-of-sale for a small shop: barcode selling, stock kept as a ledger, customer credit, thermal receipts and day-close reports. The data never leaves the counter.
+type: software
+authors:
+  - given-names: "K M Shahriar"
+    family-names: "Hossain"
+    orcid: "https://orcid.org/0009-0004-5489-9717"
+repository-code: "https://github.com/devShakib015/BusinessMonitoringApp"
+url: "https://devshakib.jumyn.com/apps"
+license: MIT
+keywords:
+  - "barcode"
+  - "inventory"
+  - "offline"
+  - "open-source"
+  - "point-of-sale"
+  - "pos"
+  - "python"
+  - "receipt-printer"
+  - "retail"
+  - "shop-management"
+  - "small-business"
+  - "sqlite"

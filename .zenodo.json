@@ -1,0 +1,33 @@
+{
+  "title": "ShopDesk \u2014 an offline point-of-sale for a small shop",
+  "description": "A free, offline point-of-sale for a small shop: barcode selling, stock kept as a ledger, customer credit, thermal receipts and day-close reports. The data never leaves the counter.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Hossain, K M Shahriar",
+      "orcid": "0009-0004-5489-9717"
+    }
+  ],
+  "keywords": [
+    "barcode",
+    "inventory",
+    "offline",
+    "open-source",
+    "point-of-sale",
+    "pos",
+    "python",
+    "receipt-printer",
+    "retail",
+    "shop-management",
+    "small-business",
+    "sqlite"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/devShakib015/BusinessMonitoringApp",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

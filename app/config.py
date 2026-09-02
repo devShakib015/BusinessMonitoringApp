@@ -13,7 +13,7 @@ import sys
 
 APP_NAME = "ShopDesk"
 APP_TAGLINE = "Point of sale for small shops"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 APP_ID = "shopdesk"
 PUBLISHER = "devShakib015"
 PROJECT_URL = "https://github.com/devShakib015/BusinessMonitoringApp"
